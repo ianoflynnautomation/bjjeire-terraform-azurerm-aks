@@ -21,10 +21,12 @@ rule "terraform_naming_convention" {
   
   custom_formats = {
     azurerm_resource_group = {
-      format = "^[a-z][a-z0-9-]*[a-z0-9]$"
+      description = "Resource groups must be lowercase, starting with a letter, and can include hyphens."
+      regex       = "^[a-z][a-z0-9-]*[a-z0-9]$"
     }
     azurerm_kubernetes_cluster = {
-      format = "^[a-z][a-z0-9-]*[a-z0-9]$"
+      description = "AKS clusters must be lowercase, starting with a letter, and can include hyphens."
+      regex       = "^[a-z][a-z0-9-]*[a-z0-9]$"
     }
   }
 }
