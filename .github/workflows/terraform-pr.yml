@@ -1,13 +1,6 @@
 name: "Terraform PR Validation"
 
 on:
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "**.tf"
-      - "**.tfvars"
-      - ".github/workflows/terraform-*.yml"
-      - "modules/**"
   push:
     branches:
       - main
@@ -16,7 +9,13 @@ on:
       - "**.tfvars"
       - ".github/workflows/terraform-*.yml"
       - "modules/**"
-
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+      - ".github/workflows/terraform-*.yml"
+      - "modules/**"
 permissions:
   id-token: write
   contents: read
@@ -77,7 +76,7 @@ jobs:
         continue-on-error: true
 
       - name: Post Format Results
-        if: steps.fmt.outcome == 'failure'
+        if: steps.fmt.outcome == 'failure' && github.event_name == 'pull_request'
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
