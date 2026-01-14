@@ -1,94 +1,102 @@
 name: "Terraform PR Validation"
 
 on:
-    pull_request:
-        branches: [main, develop]
-        paths:
-            - "**.tf"
-            - "**.tfvars"
-            - ".github/workflows/terraform-*.yml"
-            - "modules/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+      - ".github/workflows/terraform-*.yml"
+      - "modules/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "**.tf"
+      - "**.tfvars"
+      - ".github/workflows/terraform-*.yml"
+      - "modules/**"
 
 permissions:
-    id-token: write
-    contents: read
-    pull-requests: write
-    security-events: write
+  id-token: write
+  contents: read
+  pull-requests: write
+  security-events: write
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-    TERRAFORM_VERSION: "1.9.0"
-    TF_IN_AUTOMATION: "true"
-    TF_INPUT: "false"
+  TERRAFORM_VERSION: "1.9.0"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
 
 jobs:
-    changes:
-        name: Detect Changes
-        runs-on: ubuntu-latest
-        outputs:
-            environments: ${{ steps.filter.outputs.changes }}
-        steps:
-            - name: Checkout Repository
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-            - name: Detect Changed Environments
-              uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
-              id: filter
-              with:
-                  filters: |
-                      dev:
-                        - 'environments/dev/**'
-                        - 'modules/**'
-                        - '*.tf'
-                      staging:
-                        - 'environments/staging/**'
-                        - 'modules/**'
-                        - '*.tf'
-                      prod:
-                        - 'environments/prod/**'
-                        - 'modules/**'
-                        - '*.tf'
-    format:
-        name: Format Check
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repository
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Detect Changed Environments
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            dev:
+              - 'environments/dev/**'
+              - 'modules/**'
+              - '*.tf'
+            staging:
+              - 'environments/staging/**'
+              - 'modules/**'
+              - '*.tf'
+            prod:
+              - 'environments/prod/**'
+              - 'modules/**'
+              - '*.tf'
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-            - name: Setup Terraform
-              uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269571de # v3.1.2
-              with:
-                terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269571de # v3.1.2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-            - name: Terraform Format Check
-              id: fmt
-              run: terraform fmt -check -recursive -diff
-              continue-on-error: true
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive -diff
+        continue-on-error: true
 
-            - name: Post Format Results
-              if: steps.fmt.outcome == 'failure'
-              uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-              with:
-                script: |
-                  const output = `#### Terraform Format Check ❌ \`${{ steps.fmt.outcome }}\`
+      - name: Post Format Results
+        if: steps.fmt.outcome == 'failure'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const output = `#### Terraform Format Check ❌ \`${{ steps.fmt.outcome }}\`
 
-                  Your code is not properly formatted. Please run:
-                  \`\`\`bash
-                  terraform fmt -recursive
-                  \`\`\`
+            Your code is not properly formatted. Please run:
+            \`\`\`bash
+            terraform fmt -recursive
+            \`\`\`
 
-                  *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
-                  github.rest.issues.createComment({
-                    issue_number: context.issue.number,
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    body: output
-                  });
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
 
-            - name: Fail on Format Error
-              if: steps.fmt.outcome == 'failure'
-              run: exit 1
+      - name: Fail on Format Error
+        if: steps.fmt.outcome == 'failure'
+        run: exit 1
