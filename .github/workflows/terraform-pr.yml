@@ -139,3 +139,59 @@ jobs:
               repo: context.repo.repo,
               body: output
             });
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
+
+      - name: Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Run Trivy and Fail on Critical
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL'
+          exit-code: '1'
+    
+  checkov:
+    name: Checkov Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,checkov-results.sarif
+          soft_fail: true
+          skip_check: CKV_AZURE_35,CKV_AZURE_4 # Skip checks that conflict with our setup
+
+      - name: Upload Checkov Results
+        uses: github/codeql-action/upload-sarif@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
+        with:
+          sarif_file: checkov-results.sarif
+        continue-on-error: true
+
