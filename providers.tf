@@ -7,3 +7,5 @@ provider "azurerm" {
     }
   }
 }
+
+provider "tls" {}

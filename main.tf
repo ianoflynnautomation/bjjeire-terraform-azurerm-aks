@@ -11,7 +11,7 @@ resource "tls_private_key" "aks_ssh_key" {
   rsa_bits  = 4096
 }
 
-module "avm-res-network-virtualnetwork" {
+module "virtual_network" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "0.16.0"
 
@@ -55,7 +55,7 @@ module "avm-res-network-virtualnetwork" {
   timeouts = var.timeouts
 }
 
-module "avm-res-keyvault-vault" {
+module "key_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
   version = "0.10.2"
 
@@ -290,13 +290,13 @@ module "aks" {
   temporary_name_for_rotation                                     = var.aks_temporary_name_for_rotation
   upgrade_override                                                = var.aks_upgrade_override
   vnet_subnet = {
-    id = module.avm-res-network-virtualnetwork.subnets["workload"].resource_id
+    id = module.virtual_network.subnets["workload"].resource_id
   }
   web_app_routing             = var.aks_web_app_routing
   workload_autoscaler_profile = var.aks_workload_autoscaler_profile
   workload_identity_enabled   = var.aks_workload_identity_enabled
 
   depends_on = [
-    module.avm-res-network-virtualnetwork
+    module.virtual_network
   ]
 }
