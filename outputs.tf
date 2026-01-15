@@ -20,5 +20,5 @@ output "workload_identity_client_id" {
 
 output "sops_key_id" {
   description = "SOPS key vault encryption key"
-  value = module.key_vault.keys["sops-encryption-key"].id
+  value       = module.key_vault.keys["sops-encryption-key"].id
 }
