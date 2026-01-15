@@ -171,6 +171,7 @@ jobs:
           format: 'table'
           severity: 'CRITICAL'
           exit-code: '1'
+          trivy-config: trivy.yaml
     
   checkov:
     name: Checkov Scan
