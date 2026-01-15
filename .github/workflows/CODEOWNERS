@@ -1,0 +1,20 @@
+# CODEOWNERS - defines code reviewers for this repository
+# Learn more: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+*    @ianoflynnautomation
+
+# Terraform modules require platform team review
+/modules/ @ianoflynnautomation
+
+# Environment-specific configurations
+/environments/dev/ @ianoflynnautomation
+/environments/staging/ @ianoflynnautomation
+/environments/prod/ @ianoflynnautomation
+
+# GitHub workflows require platform and security review
+/.github/ @ianoflynnautomation
+
+# Documentation can be updated more freely
+/docs/ @ianoflynnautomation
+/README.md @ianoflynnautomation

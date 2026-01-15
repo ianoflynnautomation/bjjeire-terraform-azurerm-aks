@@ -27,6 +27,8 @@ crash.*.log
 !example.tfvars
 !terraform.tfvars.example
 
+*backend.hcl
+
 # Ignore override files as they are usually used for local development overrides
 override.tf
 override.tf.json
