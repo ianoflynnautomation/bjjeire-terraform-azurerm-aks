@@ -1,16 +1,16 @@
 output "system_subnet_id" {
   description = "The resource ID of the system subnet"
-  value       = module.avm-res-network-virtualnetwork.subnets["system"].resource_id
+  value       = module.virtual_network.subnets["system"].resource_id
 }
 
 output "workload_subnet_id" {
   description = "The resource ID of the workload subnet"
-  value       = module.avm-res-network-virtualnetwork.subnets["workload"].resource_id
+  value       = module.virtual_network.subnets["workload"].resource_id
 }
 
 output "kv_uri" {
   description = "The URI of the vault for performing operations on keys and secrets"
-  value       = module.avm-res-keyvault-vault.uri
+  value       = module.key_vault.uri
 }
 
 output "workload_identity_client_id" {
@@ -19,5 +19,6 @@ output "workload_identity_client_id" {
 }
 
 output "sops_key_id" {
-  value = module.avm-res-keyvault-vault.keys["sops-encryption-key"].id
+  description = "SOPS key vault encryption key"
+  value       = module.key_vault.keys["sops-encryption-key"].id
 }
