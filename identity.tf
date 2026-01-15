@@ -73,7 +73,7 @@ resource "azurerm_federated_identity_credential" "arc" {
 }
 
 resource "azurerm_role_assignment" "aks_vnet" {
-  scope                = module.avm-res-network-virtualnetwork.resource_id
+  scope                = module.virtual_network.resource_id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.cluster_identity.principal_id
 }

@@ -12,8 +12,7 @@ resource "tls_private_key" "aks_ssh_key" {
 }
 
 module "virtual_network" {
-  source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "0.16.0"
+  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-network-virtualnetwork.git?ref=c08ca17f59b4f04ee70d9a0928c9bc41738d7ce8" #v0.17.0
 
   location                = azurerm_resource_group.rg.location
   parent_id               = azurerm_resource_group.rg.id
@@ -56,8 +55,7 @@ module "virtual_network" {
 }
 
 module "key_vault" {
-  source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.10.2"
+  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-keyvault-vault.git?ref=3735ca49887857467f3030ad72fd43705e1eb387" #v0.10.2
 
   location                                = azurerm_resource_group.rg.location
   name                                    = var.kv_name
@@ -133,8 +131,7 @@ module "key_vault" {
 }
 
 module "aks" {
-  source  = "Azure/aks/azurerm"
-  version = "11.0.0"
+  source = "git::https://github.com/Azure/terraform-azurerm-aks.git?ref=be56dbf4b3fbde8df7d9df37da2a4ff6a0e98f18" #11.0.0
 
   location                                                        = azurerm_resource_group.rg.location
   resource_group_name                                             = azurerm_resource_group.rg.name

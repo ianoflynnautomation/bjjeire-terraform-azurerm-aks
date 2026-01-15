@@ -25,7 +25,7 @@ locals {
       ]
       scale_down_mode = "Delete"
       vnet_subnet = {
-        id = module.avm-res-network-virtualnetwork.subnets["workload"].resource_id
+        id = module.virtual_network.subnets["workload"].resource_id
       }
     }
   }
