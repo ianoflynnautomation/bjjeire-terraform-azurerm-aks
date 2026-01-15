@@ -1,14 +1,6 @@
 name: "Terraform PR Validation"
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "**.tf"
-      - "**.tfvars"
-      - ".github/workflows/terraform-*.yml"
-      - "modules/**"
   pull_request:
     branches: [main, develop]
     paths:
@@ -76,7 +68,7 @@ jobs:
         continue-on-error: true
 
       - name: Post Format Results
-        if: steps.fmt.outcome == 'failure' && github.event_name == 'pull_request'
+        if: steps.fmt.outcome == 'failure'
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
@@ -131,20 +123,19 @@ jobs:
         continue-on-error: true
 
       - name: Post Lint Results
-        if: steps.tflint-root.outcome == 'failure' && github.event_name == 'pull_request'
+        if: steps.tflint-root.outcome == 'failure'
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const output = `#### TFLint Check ⚠️ \`${{ steps.tflint-root.outcome }}\`
-            
+
             Linting issues were found. Please review and fix the warnings.
-            
+
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: output
             });
-
