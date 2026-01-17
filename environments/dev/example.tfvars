@@ -1,5 +1,8 @@
 resource_group_name                                      = "rg-myaks-test-swn-01"
 location                                                 = "switzerlandnorth"
+github_org                                               = "ianoflynnautomation"
+github_repo                                              = "bjjeire-terraform-azurerm-aks"
+environment                                              = "dev"
 vnet_name                                                = "vnet-myaks-test-swn-00"
 vnet_address_space                                       = ["10.20.0.0/16"]
 aks_cluster_name                                         = "aks-myaks-test-swn-00"

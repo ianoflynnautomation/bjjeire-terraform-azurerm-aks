@@ -1,43 +1,57 @@
 
 resource "azurerm_user_assigned_identity" "external_secrets_identity" {
-  name                = "${var.aks_cluster_name}-external-secrets-identity"
+  name                = local.uami_name.extern_secrets
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
 }
 
 resource "azurerm_user_assigned_identity" "observability_identity" {
-  name                = "${var.aks_cluster_name}-observability-identity"
+  name                = local.uami_name.observability
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
 }
 
 resource "azurerm_user_assigned_identity" "arc_identity" {
-  name                = "${var.aks_cluster_name}-arc-identity"
+  name                = local.uami_name.arc
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
 }
 
 resource "azurerm_user_assigned_identity" "flux_identity" {
-  name                = "${var.aks_cluster_name}-flux-identity"
+  name                = local.uami_name.flux
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
 }
-
 
 resource "azurerm_user_assigned_identity" "cluster_identity" {
-  name                = "${var.aks_cluster_name}-control-plane-identity"
+  name                = local.uami_name.control_plane
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
 }
 
+resource "azurerm_user_assigned_identity" "github_actions" {
+  name                = local.uami_name.github
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = var.tags
+}
+
+resource "azurerm_federated_identity_credential" "github_oidc" {
+  name                = "fic-github-${var.environment}"
+  resource_group_name = azurerm_resource_group.rg.name
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = "https://token.actions.githubusercontent.com"
+  parent_id           = azurerm_user_assigned_identity.github_actions.id
+  subject             = "repo:${var.github_org}/${var.github_repo}:environment:${var.environment}"
+}
 
 resource "azurerm_federated_identity_credential" "flux_source_controller" {
-  name                = "${var.aks_cluster_name}-flux-source-controller-fed-id"
+  name                = "fic-flux-source-controller"
   resource_group_name = azurerm_resource_group.rg.name
   audience            = ["api://AzureADTokenExchange"]
   issuer              = module.aks.oidc_issuer_url
@@ -46,7 +60,7 @@ resource "azurerm_federated_identity_credential" "flux_source_controller" {
 }
 
 resource "azurerm_federated_identity_credential" "external_secrets" {
-  name                = "${var.aks_cluster_name}-external-secrets-fed-id"
+  name                = "fic-external-secrets"
   resource_group_name = azurerm_resource_group.rg.name
   audience            = ["api://AzureADTokenExchange"]
   issuer              = module.aks.oidc_issuer_url
@@ -55,7 +69,7 @@ resource "azurerm_federated_identity_credential" "external_secrets" {
 }
 
 resource "azurerm_federated_identity_credential" "observability" {
-  name                = "${var.aks_cluster_name}-observability-fed-id"
+  name                = "fic-observability"
   resource_group_name = azurerm_resource_group.rg.name
   audience            = ["api://AzureADTokenExchange"]
   issuer              = module.aks.oidc_issuer_url
@@ -64,16 +78,10 @@ resource "azurerm_federated_identity_credential" "observability" {
 }
 
 resource "azurerm_federated_identity_credential" "arc" {
-  name                = "${var.aks_cluster_name}-arc-fed-id"
+  name                = "fic-arc-gha-runner"
   resource_group_name = azurerm_resource_group.rg.name
   audience            = ["api://AzureADTokenExchange"]
   issuer              = module.aks.oidc_issuer_url
   parent_id           = azurerm_user_assigned_identity.arc_identity.id
   subject             = "system:serviceaccount:actions-runner-system:gha-runner-scale-set-controller"
-}
-
-resource "azurerm_role_assignment" "aks_vnet" {
-  scope                = module.virtual_network.resource_id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.cluster_identity.principal_id
 }

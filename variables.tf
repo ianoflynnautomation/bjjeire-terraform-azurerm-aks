@@ -33,6 +33,21 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
+variable "github_org" {
+  type        = string
+  description = "The GitHub Organization or Username"
+}
+
+variable "github_repo" {
+  type        = string
+  description = "The repository name"
+}
+
+variable "environment" {
+  type        = string
+  description = "dev, staging, or prod"
+}
+
 
 variable "location" {
   type        = string
