@@ -84,7 +84,7 @@ jobs:
         name: Plan Dev
         needs: [quality, changes]
         if: needs.changes.outputs.dev == 'true'
-        uses: ./.github/workflows/_terraform-plan.yml
+        uses: ./.github/workflows/terraform-plan.yml
         with:
             environment: dev
             terraform_version: "1.9.8"
@@ -99,7 +99,7 @@ jobs:
         name: Plan Staging
         needs: [quality, changes]
         if: needs.changes.outputs.staging == 'true'
-        uses: ./.github/workflows/_terraform-plan.yml
+        uses: ./.github/workflows/terraform-plan.yml
         with:
             environment: staging
             terraform_version: "1.9.8"
@@ -114,7 +114,7 @@ jobs:
         name: Plan Prod
         needs: [quality, security, changes]
         if: needs.changes.outputs.prod == 'true'
-        uses: ./.github/workflows/_terraform-plan.yml
+        uses: ./.github/workflows/terraform-plan.yml
         with:
             environment: prod
             terraform_version: "1.9.8"
