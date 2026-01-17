@@ -13,11 +13,6 @@ output "kv_uri" {
   value       = module.key_vault.uri
 }
 
-output "workload_identity_client_id" {
-  description = "The Client ID of the User Assigned Identity for the Actions Runner Controller."
-  value       = azurerm_user_assigned_identity.cluster_identity.client_id
-}
-
 output "sops_key_id" {
   description = "SOPS key vault encryption key"
   value       = module.key_vault.keys["sops-encryption-key"].id

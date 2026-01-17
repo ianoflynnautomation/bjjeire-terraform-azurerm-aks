@@ -33,12 +33,45 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
+variable "github_org" {
+  type        = string
+  description = "The GitHub Organization or Username"
+}
+
+variable "github_repo" {
+  type        = string
+  description = "The repository name"
+}
+
+variable "environment" {
+  type        = string
+  description = "dev, staging, or prod"
+}
+
+variable "storage_account_name" {
+  type        = string
+  description = "Name of the storage account that contains state file"
+}
+
+variable "state_resource_group_name" {
+  type        = string
+  description = "The resource group where the state file is located"
+}
 
 variable "location" {
   type        = string
   default     = "switzerlandnorth"
   description = <<DESCRIPTION
-(Optional) The location/region where the virtual network is created. Changing this forces a new resource to be created.
+(Optional) The location/region where the resources are created. Changing this forces a new resource to be created.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "location_short_name" {
+  type        = string
+  default     = "swn"
+  description = <<DESCRIPTION
+(Optional) The location/region short name where the resources are created. Changing this forces a new resource to be created.
 DESCRIPTION
   nullable    = false
 }
