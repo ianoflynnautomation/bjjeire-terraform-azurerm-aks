@@ -37,13 +37,15 @@ jobs:
             - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
             - name: Checkov Scan
-              uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf #v12.1347.0
+              uses: bridgecrewio/checkov-action@v12
               with:
                   directory: .
                   framework: terraform
-                  output_format: github_failed_only
+                  output_format: github_failed_only,sarif 
+                  output_file_path: results.md,results.sarif
                   soft_fail: true
                   skip_check: CKV_AZURE_35,CKV_AZURE_4
+                  download_external_modules: true
 
             - name: Checkov Report
               id: checkov-report
