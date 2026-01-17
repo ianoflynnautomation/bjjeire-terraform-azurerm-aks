@@ -90,8 +90,11 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       run: |
-        INIT_ARGS="-input=false -no-color"
-        if [ -n "${{ inputs.backend_config_file }}" ]; then
-          INIT_ARGS="$INIT_ARGS -backend-config=${{ inputs.backend_config_file }}"
-        fi
-        terraform init $INIT_ARGS
+        BACKEND_PATH="$GITHUB_WORKSPACE/${{ inputs.backend_config_file }}"
+        
+        echo "Initializing with config: $BACKEND_PATH"
+        
+        terraform init \
+          -input=false \
+          -no-color \
+          -backend-config="$BACKEND_PATH"
