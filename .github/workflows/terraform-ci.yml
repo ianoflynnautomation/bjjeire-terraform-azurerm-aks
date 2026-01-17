@@ -1,14 +1,15 @@
 name: "Terraform CI"
 
 on:
-    pull_request:
-        branches: [main]
-        paths:
-            - "**.tf"
-            - "**.tfvars"
-            - "modules/**"
-            - ".github/workflows/terraform-*.yml"
-            - ".github/actions/**"
+  workflow_dispatch:
+    # pull_request:
+    #     branches: [main]
+    #     paths:
+    #         - "**.tf"
+    #         - "**.tfvars"
+    #         - "modules/**"
+    #         - ".github/workflows/terraform-*.yml"
+    #         - ".github/actions/**"
 
 permissions:
     id-token: write
@@ -41,7 +42,7 @@ jobs:
               with:
                   directory: .
                   framework: terraform
-                  output_format: github_failed_only,sarif 
+                  output_format: github_failed_only,sarif
                   output_file_path: results.md,results.sarif
                   soft_fail: true
                   skip_check: CKV_AZURE_35,CKV_AZURE_4
@@ -50,12 +51,12 @@ jobs:
             - name: Checkov Report
               if: always()
               run: |
-                if [ -f "results.md" ]; then
-                  cat results.md >> $GITHUB_STEP_SUMMARY
-                else
-                  echo "## Checkov Scan: No failures detected ✅" >> $GITHUB_STEP_SUMMARY
-                fi
-              
+                  if [ -f "results.md" ]; then
+                    cat results.md >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "## Checkov Scan: No failures detected ✅" >> $GITHUB_STEP_SUMMARY
+                  fi
+
     changes:
         name: Detect Changes
         runs-on: ubuntu-latest

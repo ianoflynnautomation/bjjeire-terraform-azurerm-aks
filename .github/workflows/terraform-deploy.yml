@@ -98,30 +98,28 @@ jobs:
             - name: Check Plan Output
               id: plan-check
               run: |
-                if [ "${{ steps.plan.outcome }}" == "failure" ]; then
-                    echo "Plan failed"
-                    exit 1
-                fi
-                # Exit code 2 means changes detected
-                if [ "${{ steps.plan.outputs.exitcode }}" == "2" ]; then
-                    echo "changes=true" >> $GITHUB_OUTPUT
-                else
-                    echo "changes=false" >> $GITHUB_OUTPUT
-                fi
+                  if [ "${{ steps.plan.outcome }}" == "failure" ]; then
+                      echo "Plan failed"
+                      exit 1
+                  fi
+                  # Exit code 2 means changes detected
+                  if [ "${{ steps.plan.outputs.exitcode }}" == "2" ]; then
+                      echo "changes=true" >> $GITHUB_OUTPUT
+                  else
+                      echo "changes=false" >> $GITHUB_OUTPUT
+                  fi
 
             - name: Terraform Apply
               if: |
-                needs.setup.outputs.action == 'apply' && 
-                steps.plan-check.outputs.changes == 'true'
+                  needs.setup.outputs.action == 'apply' && 
+                  steps.plan-check.outputs.changes == 'true'
               run: terraform apply -auto-approve tfplan
 
             - name: Output Deployment Info
               if: needs.setup.outputs.action == 'apply'
               run: |
-                echo "## Deployment Summary (Dev)" >> $GITHUB_STEP_SUMMARY
-                echo "" >> $GITHUB_STEP_SUMMARY
-                echo "| Output | Value |" >> $GITHUB_STEP_SUMMARY
-                echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-                terraform output -json | jq -r 'to_entries[] | select(.value.sensitive != true) | "| \(.key) | \(.value.value // "N/A") |"' >> $GITHUB_STEP_SUMMARY
-            
-            
+                  echo "## Deployment Summary (Dev)" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "| Output | Value |" >> $GITHUB_STEP_SUMMARY
+                  echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+                  terraform output -json | jq -r 'to_entries[] | select(.value.sensitive != true) | "| \(.key) | \(.value.value // "N/A") |"' >> $GITHUB_STEP_SUMMARY

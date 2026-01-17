@@ -83,19 +83,19 @@ module "key_vault" {
     },
     external_secrets_kv_secret_user = {
       role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = azurerm_user_assigned_identity.external_secrets_identity.principal_id
+      principal_id               = module.external_secrets_identity.principal_id
     },
     flux_kv_secrets_user = {
       role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = azurerm_user_assigned_identity.flux_identity.principal_id
+      principal_id               = module.flux_identity.principal_id
     },
     observability_kv_secret_user = {
       role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = azurerm_user_assigned_identity.observability_identity.principal_id
+      principal_id               = module.observability_identity.principal_id
     },
     arc_kv_secret_user = {
       role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = azurerm_user_assigned_identity.arc_identity.principal_id
+      principal_id               = module.arc_identity.principal_id
     }
   }
   secrets = {
@@ -195,7 +195,7 @@ module "aks" {
   green_field_application_gateway_for_ingress                     = var.aks_green_field_application_gateway_for_ingress
   host_encryption_enabled                                         = var.aks_host_encryption_enabled
   http_proxy_config                                               = var.aks_http_proxy_config
-  identity_ids                                                    = [azurerm_user_assigned_identity.cluster_identity.id]
+  identity_ids                                                    = [module.cluster_identity.id]
   identity_type                                                   = var.aks_identity_type
   image_cleaner_enabled                                           = var.aks_image_cleaner_enabled
   interval_before_cluster_update                                  = var.aks_interval_before_cluster_update

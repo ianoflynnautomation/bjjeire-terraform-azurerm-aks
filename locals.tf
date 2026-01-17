@@ -1,19 +1,6 @@
 
 
 locals {
-
-  resource_type_uai = "uami"
-  region            = "swn"
-
-  uami_name = {
-    extern_secrets = "${local.resource_type_uai}-extsecrets-${var.environment}-${local.region}"
-    observability  = "${local.resource_type_uai}-obs-${var.environment}-${local.region}"
-    arc            = "${local.resource_type_uai}-arc-${var.environment}-${local.region}"
-    flux           = "${local.resource_type_uai}-flux-${var.environment}-${local.region}"
-    control_plane  = "${local.resource_type_uai}-cp-${var.environment}-${local.region}"
-    github         = "id-bjjeire-github-actions-${var.environment}-${local.region}"
-  }
-
   workload_node_pools = {
     workload_node_pools = {
       name                 = "runners"

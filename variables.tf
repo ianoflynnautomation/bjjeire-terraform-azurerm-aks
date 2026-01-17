@@ -62,7 +62,16 @@ variable "location" {
   type        = string
   default     = "switzerlandnorth"
   description = <<DESCRIPTION
-(Optional) The location/region where the virtual network is created. Changing this forces a new resource to be created.
+(Optional) The location/region where the resources are created. Changing this forces a new resource to be created.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "location_short_name" {
+  type        = string
+  default     = "swn"
+  description = <<DESCRIPTION
+(Optional) The location/region short name where the resources are created. Changing this forces a new resource to be created.
 DESCRIPTION
   nullable    = false
 }

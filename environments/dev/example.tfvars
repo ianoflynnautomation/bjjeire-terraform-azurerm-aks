@@ -1,5 +1,6 @@
 resource_group_name                                      = "rg-myaks-test-swn-01"
 location                                                 = "switzerlandnorth"
+location_short_name                                      = "swn"
 github_org                                               = "ianoflynnautomation"
 github_repo                                              = "bjjeire-terraform-azurerm-aks"
 storage_account_name                                     = "stmyakssharedswn01"
