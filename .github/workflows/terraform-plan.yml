@@ -67,7 +67,7 @@ jobs:
               run: |
                   set +e
                   terraform plan \
-                    -var-file=environments/${{ inputs.environment }}/terraform.tfvars \
+                    -var-file=environments/${{ inputs.environment }}/example.tfvars \
                     -out=tfplan-${{ inputs.environment }} \
                     -detailed-exitcode \
                     -no-color \

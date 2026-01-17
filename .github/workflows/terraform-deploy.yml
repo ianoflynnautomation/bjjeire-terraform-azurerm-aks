@@ -90,7 +90,7 @@ jobs:
               id: plan
               run: |
                   terraform plan \
-                  -var-file=environments/dev/terraform.tfvars \
+                  -var-file=environments/dev/example.tfvars \
                   -out=tfplan \
                   -detailed-exitcode
               continue-on-error: true
