@@ -48,6 +48,15 @@ variable "environment" {
   description = "dev, staging, or prod"
 }
 
+variable "storage_account_name" {
+  type        = string
+  description = "Name of the storage account that contains state file"
+}
+
+variable "state_resource_group_name" {
+  type        = string
+  description = "The resource group where the state file is located"
+}
 
 variable "location" {
   type        = string
