@@ -92,12 +92,7 @@ jobs:
         with:
             environment: dev
             terraform_version: "1.9.8"
-        secrets:
-            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-            AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
-            TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        secrets: inherit
 
     plan-staging:
         name: Plan Staging
@@ -107,12 +102,7 @@ jobs:
         with:
             environment: staging
             terraform_version: "1.9.8"
-        secrets:
-            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-            AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
-            TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        secrets: inherit
 
     plan-prod:
         name: Plan Prod
@@ -122,12 +112,7 @@ jobs:
         with:
             environment: prod
             terraform_version: "1.9.8"
-        secrets:
-            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PROD }}
-            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-            AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_PROD }}
-            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
-            TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        secrets: inherit
 
     summary:
         name: PR Summary

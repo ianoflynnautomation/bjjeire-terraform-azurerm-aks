@@ -40,7 +40,7 @@ jobs:
     plan:
         name: Plan (${{ inputs.environment }})
         runs-on: ubuntu-latest
-        environment: ${{ inputs.environment }}-plan
+        environment: ${{ inputs.environment }}
         outputs:
             exitcode: ${{ steps.plan.outputs.exitcode }}
             has_changes: ${{ steps.check.outputs.has_changes }}
