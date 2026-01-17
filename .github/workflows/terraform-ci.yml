@@ -48,11 +48,13 @@ jobs:
                   download_external_modules: true
 
             - name: Checkov Report
-              id: checkov-report
+              if: always()
               run: |
-                while IFS= read -r line; do
-                echo "$line" >> $GITHUB_STEP_SUMMARY
-                done < results_github_failed_only.md
+                if [ -f "results.md" ]; then
+                  cat results.md >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "## Checkov Scan: No failures detected ✅" >> $GITHUB_STEP_SUMMARY
+                fi
               
 
     changes:
