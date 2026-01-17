@@ -23,7 +23,7 @@ on:
                 required: true
             AZURE_SUBSCRIPTION_ID:
                 required: true
-            TF_VAR_github_token:
+            TF_VAR_gh_flux_aks_token:
                 required: false
             TF_VAR_grafana_admin_password:
                 required: false
@@ -49,8 +49,8 @@ jobs:
             group: terraform-apply-${{ inputs.environment }}
             cancel-in-progress: false
         env:
-            TF_VAR_github_token: ${{ secrets.TF_VAR_github_token }}
-            TF_VAR_grafana_admin_password: ${{ secrets.TF_VAR_grafana_admin_password }}
+            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
+            TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         steps:
             - name: Checkout
               uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

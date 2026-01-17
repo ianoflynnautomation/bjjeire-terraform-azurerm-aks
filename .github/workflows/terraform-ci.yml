@@ -56,7 +56,6 @@ jobs:
                   echo "## Checkov Scan: No failures detected ✅" >> $GITHUB_STEP_SUMMARY
                 fi
               
-
     changes:
         name: Detect Changes
         runs-on: ubuntu-latest
@@ -97,7 +96,7 @@ jobs:
             AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
             AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
             AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            TF_VAR_github_token: ${{ secrets.GH_TOKEN_INFRA }}
+            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
             TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
 
     plan-staging:
@@ -112,7 +111,7 @@ jobs:
             AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
             AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
             AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            TF_VAR_github_token: ${{ secrets.GH_TOKEN_INFRA }}
+            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
             TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
 
     plan-prod:
@@ -127,7 +126,7 @@ jobs:
             AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PROD }}
             AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
             AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_PROD }}
-            TF_VAR_github_token: ${{ secrets.GH_TOKEN_INFRA }}
+            TF_VAR_gh_flux_aks_token: ${{ secrets.GH_TOKEN_INFRA }}
             TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
 
     summary:
