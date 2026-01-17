@@ -1,0 +1,61 @@
+resource_group_name                                      = "rg-myaks-test-swn-01"
+location                                                 = "switzerlandnorth"
+vnet_name                                                = "vnet-myaks-test-swn-00"
+vnet_address_space                                       = ["10.20.0.0/16"]
+aks_cluster_name                                         = "aks-myaks-test-swn-00"
+aks_sku_tier                                             = "Free"
+aks_agents_count                                         = null
+aks_agents_size                                          = "Standard_D4ds_v5"
+aks_kubernetes_version                                   = "1.32.9"
+aks_os_disk_size_gb                                      = 128
+aks_os_disk_type                                         = "Ephemeral"
+aks_prefix                                               = "aks"
+aks_network_plugin                                       = "azure"
+aks_network_policy                                       = "azure"
+aks_create_role_assignments_for_application_gateway      = false
+aks_auto_scaling_enabled                                 = true
+aks_agents_min_count                                     = 1
+aks_agents_max_count                                     = 3
+aks_oidc_issuer_enabled                                  = true
+aks_workload_identity_enabled                            = true
+aks_role_based_access_control_enabled                    = true
+aks_rbac_aad_azure_rbac_enabled                          = true
+aks_log_analytics_workspace_enabled                      = false
+aks_microsoft_defender_enabled                           = false
+aks_azure_policy_enabled                                 = false
+aks_private_cluster_enabled                              = false
+aks_node_public_ip_enabled                               = true
+aks_local_account_disabled                               = false
+aks_auto_scaler_profile_enabled                          = true
+aks_auto_scaler_profile_scale_down_delay_after_add       = "5m"
+aks_auto_scaler_profile_scale_down_unneeded              = "5m"
+aks_auto_scaler_profile_scale_down_utilization_threshold = "0.5"
+aks_auto_scaler_profile_max_graceful_termination_sec     = "300"
+aks_auto_scaler_profile_skip_nodes_with_local_storage    = false
+aks_identity_type                                        = "UserAssigned"
+aks_kms_enabled                                          = false
+aks_temporary_name_for_rotation                          = "aksrotate"
+kv_name                                                  = "kv-myaks-test-swn-00"
+kv_sku_name                                              = "standard"
+kv_purge_protection_enabled                              = false
+kv_soft_delete_retention_days                            = 7
+kv_network_acls = {
+  bypass                     = "AzureServices"
+  default_action             = "Allow"
+  ip_rules                   = []
+  virtual_network_subnet_ids = []
+}
+kv_keys = {
+  "sops-encryption-key" = {
+    name     = "sops-encryption-key"
+    key_type = "RSA"
+    key_opts = ["encrypt", "decrypt"]
+    key_size = 2048
+  }
+}
+tags = {
+  environment = "test"
+  cost-center = "development"
+  auto-stop   = "enabled"
+}
+
