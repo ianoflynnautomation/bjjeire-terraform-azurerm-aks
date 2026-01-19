@@ -2,7 +2,7 @@
 module "github_actions_identity" {
   source = "./modules/user-assigned-identity"
 
-  name                = "uami-bjjeire-github-actions-${var.environment}-${var.location_short_name}"
+  name                = "uami-gha-${var.environment}-${var.location_short_name}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags

@@ -89,12 +89,12 @@ runs:
     - name: Terraform Init
       shell: bash
       working-directory: ${{ inputs.working_directory }}
-      run: |
-        BACKEND_PATH="$GITHUB_WORKSPACE/${{ inputs.backend_config_file }}"
-        
-        echo "Initializing with config: $BACKEND_PATH"
-        
+      run: |    
         terraform init \
           -input=false \
           -no-color \
-          -backend-config="$BACKEND_PATH"
+          -backend-config="${{ inputs.backend_config_file }}"
+
+
+
+          terraform init -input=false -no-color -backend-config="environments/dev/backend.hcl"
