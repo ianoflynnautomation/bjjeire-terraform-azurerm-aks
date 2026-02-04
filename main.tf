@@ -88,14 +88,6 @@ module "key_vault" {
     flux_kv_secrets_user = {
       role_definition_id_or_name = "Key Vault Secrets User"
       principal_id               = module.flux_identity.principal_id
-    },
-    observability_kv_secret_user = {
-      role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = module.observability_identity.principal_id
-    },
-    arc_kv_secret_user = {
-      role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = module.arc_identity.principal_id
     }
   }
   secrets = {
@@ -115,12 +107,22 @@ module "key_vault" {
       name         = "grafana-admin-password"
       content_type = "text/plain"
     }
+    cloudflare_api_token = {
+      name : "cloudflare-api-token"
+      content_type = "text/plain"
+    }
+    private_email = {
+      name : "private-email-address"
+      content_type = "text/plain"
+    }
   }
   secrets_value = {
     aks_public_ssh_key     = tls_private_key.aks_ssh_key.public_key_openssh
     aks_private_ssh_key    = tls_private_key.aks_ssh_key.private_key_pem
     gh_flux_aks_token      = var.gh_flux_aks_token
     grafana_admin_password = var.grafana_admin_password
+    cloudflare_api_token   = var.cloudflare_api_token
+    private_email          = var.private_email
   }
   sku_name                                = var.kv_sku_name
   soft_delete_retention_days              = var.kv_soft_delete_retention_days

@@ -10,6 +10,18 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "private_email" {
+  type        = string
+  description = "private_email"
+  sensitive   = true
+}
+
+variable "cloudflare_api_token" {
+  type        = string
+  description = "The cloudflare_api_token"
+  sensitive   = true
+}
+
 variable "gh_flux_aks_token" {
   type        = string
   description = "The GitHub Flux/Runner Controller access token."
