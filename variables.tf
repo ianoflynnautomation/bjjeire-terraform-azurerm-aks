@@ -1959,6 +1959,30 @@ variable "vnet_name" {
 DESCRIPTION
 }
 
+variable "system_subnet_name" {
+  type        = string
+  default     = "SystemSubnet"
+  description = "The name of the system subnet."
+}
+
+variable "system_subnet_address_prefixes" {
+  type        = list(string)
+  default     = ["10.20.0.0/20"]
+  description = "The address prefixes for the system subnet."
+}
+
+variable "workload_subnet_name" {
+  type        = string
+  default     = "RunnerSubnet"
+  description = "The name of the workload/runner subnet."
+}
+
+variable "workload_subnet_address_prefixes" {
+  type        = list(string)
+  default     = ["10.20.16.0/20"]
+  description = "The address prefixes for the workload/runner subnet."
+}
+
 variable "vnet_retry" {
   type = object({
     error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
@@ -2750,4 +2774,13 @@ This is useful when you are creating role assignments on the key vault and immed
 The default is 30 seconds for create and 0 seconds for destroy.
 DESCRIPTION
   nullable    = false
+}
+
+variable "cluster_domain" {
+  type        = string
+  default     = "cluster.local"
+  description = <<DESCRIPTION
+(Optional) The DNS domain name used within the Kubernetes cluster for service discovery.
+Defaults to cluster.local.
+DESCRIPTION
 }

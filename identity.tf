@@ -50,10 +50,4 @@ module "flux_identity" {
     }
   }
 
-  # role_assignments = {
-  #   acr_pull = {
-  #     role_definition_id_or_name = "AcrPull"
-  #     scope                      = module.acr.resource_id
-  #   }
-  # }
 }

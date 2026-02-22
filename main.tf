@@ -1,3 +1,4 @@
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "rg" {
@@ -32,26 +33,9 @@ module "virtual_network" {
   peerings                = var.vnet_peerings
   retry                   = var.vnet_retry
   role_assignments        = var.role_assignments
-  subnets = {
-    system = {
-      name                                          = "SystemSubnet"
-      address_prefixes                              = ["10.20.0.0/20"]
-      private_endpoint_network_policies             = "Enabled"
-      private_link_service_network_policies_enabled = true
-      default_outbound_access_enabled               = false
-      delegation                                    = null
-    }
-    workload = {
-      name                                          = "RunnerSubnet"
-      address_prefixes                              = ["10.20.16.0/20"]
-      private_endpoint_network_policies             = "Enabled"
-      private_link_service_network_policies_enabled = true
-      default_outbound_access_enabled               = false
-      delegation                                    = null
-    }
-  }
-  tags     = var.tags
-  timeouts = var.timeouts
+  subnets                 = local.subnets
+  tags                    = var.tags
+  timeouts                = var.timeouts
 }
 
 module "key_vault" {
@@ -76,54 +60,9 @@ module "key_vault" {
   private_endpoints_manage_dns_zone_group = var.kv_private_endpoints_manage_dns_zone_group
   public_network_access_enabled           = var.kv_public_network_access_enabled
   purge_protection_enabled                = var.kv_purge_protection_enabled
-  role_assignments = {
-    terraform_runner = {
-      role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = data.azurerm_client_config.current.object_id
-    },
-    external_secrets_kv_secret_user = {
-      role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = module.external_secrets_identity.principal_id
-    },
-    flux_kv_secrets_user = {
-      role_definition_id_or_name = "Key Vault Secrets User"
-      principal_id               = module.flux_identity.principal_id
-    }
-  }
-  secrets = {
-    aks_public_ssh_key = {
-      name         = "aks-ssh-public-key"
-      content_type = "text/plain"
-    }
-    aks_private_ssh_key = {
-      name         = "aks-ssh-private-key"
-      content_type = "text/plain"
-    }
-    gh_flux_aks_token = {
-      name         = "gh-flux-aks-token"
-      content_type = "text/plain"
-    }
-    grafana_admin_password = {
-      name         = "grafana-admin-password"
-      content_type = "text/plain"
-    }
-    cloudflare_api_token = {
-      name : "cloudflare-api-token"
-      content_type = "text/plain"
-    }
-    private_email = {
-      name : "private-email-address"
-      content_type = "text/plain"
-    }
-  }
-  secrets_value = {
-    aks_public_ssh_key     = tls_private_key.aks_ssh_key.public_key_openssh
-    aks_private_ssh_key    = tls_private_key.aks_ssh_key.private_key_pem
-    gh_flux_aks_token      = var.gh_flux_aks_token
-    grafana_admin_password = var.grafana_admin_password
-    cloudflare_api_token   = var.cloudflare_api_token
-    private_email          = var.private_email
-  }
+  role_assignments                        = local.kv_role_assignments
+  secrets                                 = local.kv_secret_definitions
+  secrets_value                           = local.kv_secret_values
   sku_name                                = var.kv_sku_name
   soft_delete_retention_days              = var.kv_soft_delete_retention_days
   tags                                    = var.tags
