@@ -1,4 +1,4 @@
-name: "Terraform Quality"
+name: terraform-quality
 
 on:
   push:
