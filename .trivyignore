@@ -28,10 +28,14 @@ AVD-AZU-0040
 # variable values at static-analysis time.
 AVD-AZU-0042
 
-# Key Vault: soft_delete_retention_days / purge protection
+# Key Vault: soft_delete_retention_days
 # Trivy scans the upstream AVM key vault module source
 # (terraform-azurerm-avm-res-keyvault-vault) and flags this
 # because the variable has no default. The value is supplied
-# by the caller via var.kv_soft_delete_retention_days and
-# var.kv_purge_protection_enabled in main.tf.
+# by the caller via var.kv_soft_delete_retention_days in main.tf.
 AVD-AZU-0016
+
+# Key Vault: purge protection not enabled (HIGH)
+# Same root cause as AVD-AZU-0016 — Trivy cannot resolve
+# var.kv_purge_protection_enabled in the remote AVM module source.
+AVD-AZU-0017
