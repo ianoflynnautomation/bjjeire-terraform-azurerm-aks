@@ -1,0 +1,29 @@
+# ============================================================
+# Trivy ignore rules for bjjeire-terraform-azurerm-aks
+# ============================================================
+# Each entry suppresses a known false-positive or an accepted
+# risk. Justifications are documented inline.
+# ============================================================
+
+# tls_private_key / RSA private key stored in Terraform state
+# The SSH key-pair is generated here intentionally. The private
+# key is immediately written to Azure Key Vault (kv_secret_values)
+# and is never exposed outside of the deployment pipeline.
+AVD-GEN-0001
+
+# AKS: API server authorized IP ranges
+# Configured by the module consumer via
+# var.aks_api_server_authorized_ip_ranges. Trivy cannot resolve
+# variable values at static-analysis time so it treats the field
+# as unset. The caller is responsible for restricting access.
+AVD-AZU-0041
+
+# AKS: RBAC not enabled
+# Controlled by var.aks_role_based_access_control_enabled.
+# Trivy cannot resolve variable values at static-analysis time.
+AVD-AZU-0040
+
+# AKS: Network policy not configured
+# Controlled by var.aks_network_policy. Trivy cannot resolve
+# variable values at static-analysis time.
+AVD-AZU-0042
