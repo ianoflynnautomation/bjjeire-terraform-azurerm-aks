@@ -17,3 +17,13 @@ output "sops_key_id" {
   description = "SOPS key vault encryption key"
   value       = module.key_vault.keys["sops-encryption-key"].id
 }
+
+output "oauth2_proxy_client_id" {
+  description = "The Azure Entra application client ID for OAuth2 Proxy"
+  value       = azuread_application.oauth2_proxy.client_id
+}
+
+output "oauth2_proxy_application_id" {
+  description = "The Azure Entra application object ID for OAuth2 Proxy"
+  value       = azuread_application.oauth2_proxy.id
+}

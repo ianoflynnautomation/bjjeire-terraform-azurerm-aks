@@ -1,29 +1,35 @@
 name: "Terraform Quality"
 
 on:
-  workflow_call:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
     inputs:
-      terraform_version:
-        type: string
-        default: "1.9.8"
       working_directory:
+        description: "Directory to run quality checks in"
         type: string
         default: "."
-    outputs:
-      fmt_outcome:
-        description: "Format check result"
-        value: ${{ jobs.quality.outputs.fmt_outcome }}
-      validate_outcome:
-        description: "Validate result"
-        value: ${{ jobs.quality.outputs.validate_outcome }}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TERRAFORM_VERSION: "1.9.8"
+  TFLINT_VERSION: "v0.53.0"
+  WORKING_DIR: ${{ inputs.working_directory || '.' }}
+  COMMENT_IDENTIFIER: "Terraform Quality Checks"
 
 jobs:
   quality:
     name: Quality Checks
     runs-on: ubuntu-latest
-    outputs:
-      fmt_outcome: ${{ steps.fmt.outcome }}
-      validate_outcome: ${{ steps.validate.outcome }}
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.2
@@ -31,27 +37,30 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: ${{ inputs.terraform_version }}
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false 
 
-      - name: Format Check
+      - name: Terraform Format
         id: fmt
-        working-directory: ${{ inputs.working_directory }}
-        run: terraform fmt -check -recursive -diff -no-color
+        run: terraform fmt -check -recursive -diff
+        working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 
-      - name: Initialize (Local Backend)
-        working-directory: ${{ inputs.working_directory }}
-        run: terraform init -backend=false -input=false -no-color
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend=false
+        working-directory: ${{ env.WORKING_DIR }}
 
-      - name: Validate
+      - name: Terraform Validate
         id: validate
-        working-directory: ${{ inputs.working_directory }}
         run: terraform validate -no-color
+        working-directory: ${{ env.WORKING_DIR }}
+        continue-on-error: true
 
-      - name: TFLint Setup
+      - name: Setup TFLint
         uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
         with:
-          tflint_version: v0.53.0
+          tflint_version: ${{ env.TFLINT_VERSION }}
 
       - name: TFLint Init
         run: tflint --init
@@ -60,25 +69,55 @@ jobs:
 
       - name: TFLint Run
         id: lint
-        working-directory: ${{ inputs.working_directory }}
-        run: tflint --recursive --format=compact --no-color
+        run: tflint --recursive --format=compact
+        working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 
-      - name: Quality Summary
-        if: always()
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          ## Terraform Quality Checks
+      - name: Post Results to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const commentIdentifier = process.env.COMMENT_IDENTIFIER;
+            const body = `### ${commentIdentifier}
 
-          | Check | Status |
-          |-------|--------|
-          | Format | ${{ steps.fmt.outcome == 'success' && '✅ Pass' || '❌ Fail' }} |
-          | Validate | ${{ steps.validate.outcome == 'success' && '✅ Pass' || '❌ Fail' }} |
-          | Lint | ${{ steps.lint.outcome == 'success' && '✅ Pass' || '⚠️ Warnings' }} |
-          EOF
+            | Check | Result | Status |
+            |-------|--------|--------|
+            | Format | \`${{ steps.fmt.outcome }}\` | ${{ steps.fmt.outcome == 'success' && '✅' || '❌' }} |
+            | Validate | \`${{ steps.validate.outcome }}\` | ${{ steps.validate.outcome == 'success' && '✅' || '❌' }} |
+            | Lint | \`${{ steps.lint.outcome }}\` | ${{ steps.lint.outcome == 'success' && '✅' || '⚠️' }} |
 
-      - name: Fail on Format Error
-        if: steps.fmt.outcome == 'failure'
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes(commentIdentifier)
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+      - name: Final Status Check
+        if: steps.fmt.outcome != 'success' || steps.validate.outcome != 'success' || steps.lint.outcome != 'success'
         run: |
-          echo "::error::Terraform formatting check failed. Run 'terraform fmt -recursive'"
+          echo "One or more quality checks failed."
           exit 1
