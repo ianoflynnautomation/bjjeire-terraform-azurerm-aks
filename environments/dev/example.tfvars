@@ -65,3 +65,7 @@ tags = {
   auto-stop   = "enabled"
 }
 
+storage_images_account_name    = "stbjjeireimagesswndev01"
+storage_images_replication_type = "LRS"
+storage_images_cors_origins    = ["*"]
+

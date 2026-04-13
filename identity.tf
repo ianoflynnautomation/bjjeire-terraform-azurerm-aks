@@ -32,6 +32,23 @@ module "cluster_identity" {
   }
 }
 
+module "api_identity" {
+  source = "./modules/user-assigned-identity"
+
+  name                = "uami-bjjeire-api-${var.environment}-${var.location_short_name}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = var.tags
+
+  federated_identity_credentials = {
+    bjjeire_api = {
+      audience = ["api://AzureADTokenExchange"]
+      issuer   = module.aks.oidc_issuer_url
+      name     = "fic-bjjeire-api"
+      subject  = "system:serviceaccount:bjjeire:bjjeire-api"
+    }
+  }
+}
 
 module "flux_identity" {
   source = "./modules/user-assigned-identity"
