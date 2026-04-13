@@ -61,6 +61,11 @@ locals {
       name         = "oauth2-proxy-client-secret"
       content_type = "text/plain"
     }
+
+    bjj-donation-bitcoin-address = {
+      name         = "bjj-donation-bitcoin-address"
+      content_type = "text/plain"
+    }
   }
 
   kv_secret_values = {

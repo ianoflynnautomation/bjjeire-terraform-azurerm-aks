@@ -2801,3 +2801,10 @@ variable "storage_images_cors_origins" {
   description = "Allowed CORS origins for blob reads. Set to your Cloudflare-proxied domain(s) in production."
   default     = ["*"]
 }
+
+variable "bjj-donation-bitcoin-address" {
+  type        = string
+  description = "Donation bitcoin address"
+  default     = null
+  sensitive   = true
+}
