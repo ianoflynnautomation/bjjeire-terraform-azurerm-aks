@@ -1,18 +1,18 @@
-resource_group_name                                      = "rg-myaks-test-swn-01"
+resource_group_name                                      = "rg-bjjeire-dev-swn-01"
 location                                                 = "switzerlandnorth"
 location_short_name                                      = "swn"
 github_org                                               = "ianoflynnautomation"
 github_repo                                              = "bjjeire-terraform-azurerm-aks"
-storage_account_name                                     = "stmyakssharedswn01"
+storage_account_name                                     = "stbjjeiresharedswn01"
 state_resource_group_name                                = "rg-state-shared-swn-01"
 environment                                              = "dev"
-vnet_name                                                = "vnet-myaks-test-swn-00"
+vnet_name                                                = "vnet-bjjeire-dev-swn-01"
 vnet_address_space                                       = ["10.20.0.0/16"]
-aks_cluster_name                                         = "aks-myaks-test-swn-00"
+aks_cluster_name                                         = "aks-bjjeire-dev-swn-01"
 aks_sku_tier                                             = "Free"
 aks_agents_count                                         = null
 aks_agents_size                                          = "Standard_D4ds_v5"
-aks_kubernetes_version                                   = "1.32.9"
+aks_kubernetes_version                                   = "1.34.7"
 aks_os_disk_size_gb                                      = 128
 aks_os_disk_type                                         = "Ephemeral"
 aks_prefix                                               = "aks"
@@ -41,7 +41,7 @@ aks_auto_scaler_profile_skip_nodes_with_local_storage    = false
 aks_identity_type                                        = "UserAssigned"
 aks_kms_enabled                                          = false
 aks_temporary_name_for_rotation                          = "aksrotate"
-kv_name                                                  = "kv-myaks-test-swn-00"
+kv_name                                                  = "kv-bjjeire-dev-swn-01"
 kv_sku_name                                              = "standard"
 kv_purge_protection_enabled                              = false
 kv_soft_delete_retention_days                            = 7
@@ -60,12 +60,12 @@ kv_keys = {
   }
 }
 tags = {
-  environment = "test"
+  environment = "dev"
   cost-center = "development"
   auto-stop   = "enabled"
 }
 
-storage_images_account_name    = "stbjjeireimagesswndev01"
+storage_images_account_name     = "stbjjeireimagesswndev01"
 storage_images_replication_type = "LRS"
-storage_images_cors_origins    = ["*"]
+storage_images_cors_origins     = ["*"]
 

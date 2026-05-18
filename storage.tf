@@ -32,12 +32,14 @@ module "storage_images" {
     }
   }
 
-  # Grant the API pod identity Storage Blob Data Contributor
-  # (Contributor needed for upload; Reader would suffice for readonly display only)
   role_assignments = {
-    api_blob_contributor = {
-      role_definition_id_or_name = "Storage Blob Data Contributor"
+    api_blob_reader = {
+      role_definition_id_or_name = "Storage Blob Data Reader"
       principal_id               = module.api_identity.principal_id
+    }
+    seeder_blob_contributor = {
+      role_definition_id_or_name = "Storage Blob Data Contributor"
+      principal_id               = module.seeder_identity.principal_id
     }
   }
 

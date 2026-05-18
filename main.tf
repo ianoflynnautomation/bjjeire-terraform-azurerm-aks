@@ -207,7 +207,7 @@ module "aks" {
   private_cluster_public_fqdn_enabled                             = var.aks_private_cluster_public_fqdn_enabled
   private_dns_zone_id                                             = var.aks_private_dns_zone_id
   public_ssh_key                                                  = tls_private_key.aks_ssh_key.public_key_openssh
-  rbac_aad_admin_group_object_ids                                 = var.aks_rbac_aad_admin_group_object_ids
+  rbac_aad_admin_group_object_ids                                 = length(local.aks_admin_group_object_ids) > 0 ? local.aks_admin_group_object_ids : var.aks_rbac_aad_admin_group_object_ids
   rbac_aad_azure_rbac_enabled                                     = var.aks_rbac_aad_azure_rbac_enabled
   rbac_aad_tenant_id                                              = data.azurerm_client_config.current.tenant_id
   role_based_access_control_enabled                               = var.aks_role_based_access_control_enabled

@@ -37,9 +37,17 @@ locals {
       name         = "aks-ssh-private-key"
       content_type = "text/plain"
     }
-    gh_flux_aks_token = {
-      name         = "gh-flux-aks-token"
+    github_app_id = {
+      name         = "github-app-id"
       content_type = "text/plain"
+    }
+    github_app_installation_id = {
+      name         = "github-app-installation-id"
+      content_type = "text/plain"
+    }
+    github_app_private_key = {
+      name         = "github-app-private-key"
+      content_type = "application/x-pem-file"
     }
     grafana_admin_password = {
       name         = "grafana-admin-password"
@@ -62,21 +70,53 @@ locals {
       content_type = "text/plain"
     }
 
-    bjj-donation-bitcoin-address = {
+    bjj_donation_bitcoin_address = {
       name         = "bjj-donation-bitcoin-address"
+      content_type = "text/plain"
+    }
+    bjj_api_azuread_tenant_id = {
+      name         = "bjj-api-azuread-tenant-id"
+      content_type = "text/plain"
+    }
+    bjj_api_azuread_client_id = {
+      name         = "bjj-api-azuread-client-id"
+      content_type = "text/plain"
+    }
+    bjj_api_azuread_audience = {
+      name         = "bjj-api-azuread-audience"
+      content_type = "text/plain"
+    }
+    # GitHub PAT with `read:packages` — consumed by `ghcr-pull-secret` ExternalSecret
+    # in bjj-app to authenticate Helm/image pulls from GHCR. Supplied via TF_VAR_ghcr_pat.
+    ghcr_pat = {
+      name         = "ghcr-pat"
+      content_type = "text/plain"
+    }
+    # MongoDB root password — auto-generated once and persisted in state. Rotating means
+    # rotating the mongo user, otherwise existing data becomes unreachable.
+    bjj_mongodb_root_password = {
+      name         = "bjj-mongodb-root-password"
       content_type = "text/plain"
     }
   }
 
   kv_secret_values = {
-    aks_public_ssh_key         = tls_private_key.aks_ssh_key.public_key_openssh
-    aks_private_ssh_key        = tls_private_key.aks_ssh_key.private_key_pem
-    gh_flux_aks_token          = var.gh_flux_aks_token
-    grafana_admin_password     = var.grafana_admin_password
-    cloudflare_api_token       = var.cloudflare_api_token
-    private_email              = var.private_email
-    oauth2_proxy_cookie_secret = base64encode(random_password.oauth2_cookie_secret.result)
-    oauth2_proxy_client_secret = azuread_application_password.oauth2_proxy.value
+    aks_public_ssh_key           = tls_private_key.aks_ssh_key.public_key_openssh
+    aks_private_ssh_key          = tls_private_key.aks_ssh_key.private_key_pem
+    github_app_id                = var.github_app_id
+    github_app_installation_id   = var.github_app_installation_id
+    github_app_private_key       = var.github_app_private_key
+    grafana_admin_password       = var.grafana_admin_password
+    cloudflare_api_token         = var.cloudflare_api_token
+    private_email                = var.private_email
+    oauth2_proxy_cookie_secret   = base64encode(random_password.oauth2_cookie_secret.result)
+    oauth2_proxy_client_secret   = azuread_application_password.oauth2_proxy.value
+    bjj_api_azuread_tenant_id    = data.azurerm_client_config.current.tenant_id
+    bjj_api_azuread_client_id    = module.app_reg_api.client_id
+    bjj_api_azuread_audience     = local.bjjeire_api_audience
+    bjj_donation_bitcoin_address = var.bjj_donation_bitcoin_address
+    ghcr_pat                     = var.ghcr_pat
+    bjj_mongodb_root_password    = random_password.bjj_mongodb_root_password.result
   }
 
   kv_role_assignments = {

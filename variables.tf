@@ -14,24 +14,69 @@ variable "private_email" {
   type        = string
   description = "private_email"
   sensitive   = true
+  nullable    = false
 }
 
 variable "cloudflare_api_token" {
   type        = string
   description = "The cloudflare_api_token"
   sensitive   = true
+  nullable    = false
 }
 
-variable "gh_flux_aks_token" {
+variable "github_app_id" {
   type        = string
-  description = "The GitHub Flux/Runner Controller access token."
+  description = "GitHub App ID (e.g. \"123456\"). Same App is consumed by Flux source-controller (gitops reads + image-automation pushes) and Actions Runner Controller (runner registration)."
   sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = can(tonumber(var.github_app_id)) && tonumber(var.github_app_id) > 0
+    error_message = "github_app_id must be a positive numeric string."
+  }
+}
+
+variable "github_app_installation_id" {
+  type        = string
+  description = "Installation ID of the shared GitHub App on the ianoflynnautomation account. Found at github.com/organizations/{org}/settings/installations/{INSTALLATION_ID}."
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = can(tonumber(var.github_app_installation_id)) && tonumber(var.github_app_installation_id) > 0
+    error_message = "github_app_installation_id must be a positive numeric string."
+  }
+}
+
+variable "github_app_private_key" {
+  type        = string
+  description = "PEM-encoded private key for the shared GitHub App. Multi-line. Pass via TF_VAR_github_app_private_key=\"$(cat key.pem)\" rather than embedding in tfvars."
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = startswith(trimspace(var.github_app_private_key), "-----BEGIN") && strcontains(var.github_app_private_key, "PRIVATE KEY-----")
+    error_message = "github_app_private_key must be a PEM-encoded private key."
+  }
 }
 
 variable "grafana_admin_password" {
   type        = string
   description = "Grafana admin password"
   sensitive   = true
+  nullable    = false
+}
+
+variable "ghcr_pat" {
+  type        = string
+  description = "GitHub PAT with read:packages scope. Consumed by the bjj-app ghcr-pull-secret ExternalSecret to authenticate Helm/image pulls from GHCR. Pass via TF_VAR_ghcr_pat rather than embedding in tfvars."
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.ghcr_pat)) > 0
+    error_message = "ghcr_pat must be non-empty."
+  }
 }
 
 variable "shared_rg_name" {
@@ -58,6 +103,12 @@ variable "github_repo" {
 variable "environment" {
   type        = string
   description = "dev, staging, or prod"
+  nullable    = false
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "environment must be one of: dev, staging, prod."
+  }
 }
 
 variable "storage_account_name" {
@@ -75,7 +126,7 @@ variable "location" {
   default     = "switzerlandnorth"
   description = <<DESCRIPTION
 (Optional) The location/region where the resources are created. Changing this forces a new resource to be created.
-DESCRIPTION
+  DESCRIPTION
   nullable    = false
 }
 
@@ -1666,7 +1717,7 @@ variable "aks_upgrade_override" {
 variable "aks_rbac_aad_admin_group_object_ids" {
   type        = list(string)
   default     = null
-  description = "Object ID of groups with admin access."
+  description = "DEPRECATED: object IDs of groups with AKS admin access. Prefer aks_admin_group_display_names — opaque GUIDs make plan diffs unreadable and don't catch stale references."
 }
 
 
@@ -2783,28 +2834,223 @@ variable "cluster_domain" {
 (Optional) The DNS domain name used within the Kubernetes cluster for service discovery.
 Defaults to cluster.local.
 DESCRIPTION
+  nullable    = false
+
+  validation {
+    condition = (
+      length(split(".", var.cluster_domain)) > 1
+      && alltrue([for label in split(".", var.cluster_domain) : length(trimspace(label)) > 0])
+    )
+    error_message = "cluster_domain must contain at least two non-empty DNS labels, for example cluster.local or example.com."
+  }
 }
 
 variable "storage_images_account_name" {
   type        = string
   description = "Name of the storage account for gym/event images. Globally unique, 3-24 lowercase alphanumeric chars."
+  nullable    = false
+
+  validation {
+    condition = (
+      length(var.storage_images_account_name) >= 3
+      && length(var.storage_images_account_name) <= 24
+      && lower(var.storage_images_account_name) == var.storage_images_account_name
+    )
+    error_message = "storage_images_account_name must be 3-24 lowercase characters. Azure also requires globally unique alphanumeric names."
+  }
 }
 
 variable "storage_images_replication_type" {
   type        = string
   description = "Replication type for the images storage account (LRS, ZRS, GRS)."
   default     = "LRS"
+  nullable    = false
+
+  validation {
+    condition     = contains(["LRS", "ZRS", "GRS"], var.storage_images_replication_type)
+    error_message = "storage_images_replication_type must be one of: LRS, ZRS, GRS."
+  }
 }
 
 variable "storage_images_cors_origins" {
   type        = list(string)
   description = "Allowed CORS origins for blob reads. Set to your Cloudflare-proxied domain(s) in production."
   default     = ["*"]
+  nullable    = false
+
+  validation {
+    condition = length(var.storage_images_cors_origins) > 0 && alltrue([
+      for origin in var.storage_images_cors_origins :
+      origin == "*" || startswith(origin, "https://") || startswith(origin, "http://localhost") || startswith(origin, "http://127.0.0.1")
+    ])
+    error_message = "storage_images_cors_origins must contain at least one origin and each origin must be *, HTTPS, localhost, or 127.0.0.1."
+  }
 }
 
-variable "bjj-donation-bitcoin-address" {
+variable "bjj_donation_bitcoin_address" {
   type        = string
   description = "Donation bitcoin address"
   default     = null
   sensitive   = true
+}
+
+variable "app_registration_owner_object_ids" {
+  type        = list(string)
+  description = "Entra ID object IDs of users or groups that own the BjjEire API and SPA app registrations. At least two owners is recommended."
+  default     = []
+  nullable    = false
+}
+
+variable "bjjeire_app_registration_name_prefixes" {
+  type = object({
+    api = string
+    spa = string
+  })
+  description = "Environment-agnostic display name prefixes for the BjjEire Entra app registrations. The environment suffix is appended in app-registrations.tf."
+  default = {
+    api = "bjjeire-api"
+    spa = "bjjeire-spa"
+  }
+  nullable = false
+
+  validation {
+    condition = (
+      length(trimspace(var.bjjeire_app_registration_name_prefixes.api)) > 0
+      && length(trimspace(var.bjjeire_app_registration_name_prefixes.spa)) > 0
+    )
+    error_message = "bjjeire_app_registration_name_prefixes.api and .spa must be non-empty."
+  }
+}
+
+variable "microsoft_graph_resource_access" {
+  type = object({
+    app_id = string
+    delegated_scopes = object({
+      user_read = string
+    })
+  })
+  description = "Microsoft Graph application ID and delegated permission IDs requested by BjjEire app registrations."
+  default = {
+    app_id = "00000003-0000-0000-c000-000000000000"
+    delegated_scopes = {
+      user_read = "e1fe6dd8-ba31-4d61-89e7-88639da4683d"
+    }
+  }
+  nullable = false
+}
+
+variable "bjjeire_api_oauth2_permission_scopes" {
+  type = map(object({
+    id                         = string
+    value                      = string
+    type                       = optional(string, "User")
+    enabled                    = optional(bool, true)
+    admin_consent_description  = string
+    admin_consent_display_name = string
+    user_consent_description   = optional(string, null)
+    user_consent_display_name  = optional(string, null)
+  }))
+  description = "Delegated OAuth2 permission scopes exposed by the BjjEire API app registration. Scope IDs are stable Entra IDs and must not change after consent is granted."
+  default = {
+    access_as_user = {
+      id                         = "5f1a3c8d-3a7d-4b8e-9c2f-1a1d2e3f4a5b"
+      value                      = "access_as_user"
+      admin_consent_description  = "Allow the bjjeire SPA to call the bjjeire-api on behalf of the signed-in user."
+      admin_consent_display_name = "Access bjjeire-api as user"
+      user_consent_description   = "Access the bjjeire-api on your behalf."
+      user_consent_display_name  = "Access bjjeire-api"
+    }
+  }
+  nullable = false
+
+  validation {
+    condition = (
+      contains(keys(var.bjjeire_api_oauth2_permission_scopes), "access_as_user")
+      && alltrue([
+        for scope in values(var.bjjeire_api_oauth2_permission_scopes) :
+        contains(["User", "Admin"], scope.type)
+        && length(trimspace(scope.value)) > 0
+        && length(trimspace(scope.admin_consent_description)) > 0
+        && length(trimspace(scope.admin_consent_display_name)) > 0
+      ])
+    )
+    error_message = "bjjeire_api_oauth2_permission_scopes must include access_as_user and each scope must have type User or Admin with consent metadata."
+  }
+}
+
+variable "bjjeire_api_app_roles" {
+  type = map(object({
+    id                   = string
+    value                = string
+    display_name         = string
+    description          = string
+    allowed_member_types = optional(list(string), ["User"])
+    enabled              = optional(bool, true)
+  }))
+  description = "Application roles exposed by the BjjEire API app registration. Role IDs are stable Entra IDs and must not change after assignment."
+  default = {
+    admin = {
+      id           = "b1d4e7a3-2c5b-4f6e-8d9a-3b4c5d6e7f80"
+      value        = "Admin"
+      display_name = "Admin"
+      description  = "Admin role for the bjjeire-api. Grants write access to gym, event, and competition data."
+    }
+  }
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for role in values(var.bjjeire_api_app_roles) :
+      length(trimspace(role.value)) > 0
+      && length(trimspace(role.display_name)) > 0
+      && length(trimspace(role.description)) > 0
+      && length(role.allowed_member_types) > 0
+      && alltrue([for member_type in role.allowed_member_types : contains(["User", "Application"], member_type)])
+    ])
+    error_message = "Each bjjeire_api_app_roles entry must have non-empty metadata and allowed_member_types containing only User and/or Application."
+  }
+}
+
+variable "bjjeire_api_optional_claims" {
+  type = object({
+    access_token = optional(list(string), [])
+    id_token     = optional(list(string), [])
+    saml2_token  = optional(list(string), [])
+  })
+  description = "Optional claims emitted by the BjjEire API app registration."
+  default = {
+    access_token = ["groups"]
+    id_token     = ["groups"]
+  }
+  nullable = false
+}
+
+variable "bjjeire_app_registration_group_membership_claims" {
+  type        = set(string)
+  description = "Group membership claims emitted by BjjEire app registrations."
+  default     = ["SecurityGroup"]
+  nullable    = false
+
+  validation {
+    condition = alltrue([
+      for claim in var.bjjeire_app_registration_group_membership_claims :
+      contains(["SecurityGroup", "ApplicationGroup", "DirectoryRole", "All", "None"], claim)
+    ])
+    error_message = "bjjeire_app_registration_group_membership_claims entries must be SecurityGroup, ApplicationGroup, DirectoryRole, All, or None."
+  }
+}
+
+variable "bjjeire_spa_redirect_uris" {
+  type        = list(string)
+  description = "SPA redirect URIs registered on the bjjeire-spa app registration. Include the prod origin and any preview/test origins. Do NOT include localhost in prod tfvars."
+  default     = ["https://bjjeire.com"]
+  nullable    = false
+
+  validation {
+    condition = length(var.bjjeire_spa_redirect_uris) > 0 && alltrue([
+      for uri in var.bjjeire_spa_redirect_uris :
+      startswith(uri, "https://") || startswith(uri, "http://localhost") || startswith(uri, "http://127.0.0.1")
+    ])
+    error_message = "bjjeire_spa_redirect_uris must contain at least one HTTPS, http://localhost, or http://127.0.0.1 URI."
+  }
 }
