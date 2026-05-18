@@ -2872,6 +2872,59 @@ variable "storage_images_replication_type" {
   }
 }
 
+variable "storage_images_account_settings" {
+  type = object({
+    account_tier                    = optional(string, "Standard")
+    allow_nested_items_to_be_public = optional(bool, false)
+    public_network_access_enabled   = optional(bool, true)
+    https_traffic_only_enabled      = optional(bool, true)
+    min_tls_version                 = optional(string, "TLS1_2")
+    shared_access_key_enabled       = optional(bool, false)
+  })
+  description = "Security and platform settings for the images storage account."
+  default     = {}
+  nullable    = false
+
+  validation {
+    condition     = contains(["Standard", "Premium"], var.storage_images_account_settings.account_tier)
+    error_message = "storage_images_account_settings.account_tier must be Standard or Premium."
+  }
+
+  validation {
+    condition     = contains(["TLS1_2", "TLS1_3"], var.storage_images_account_settings.min_tls_version)
+    error_message = "storage_images_account_settings.min_tls_version must be TLS1_2 or TLS1_3."
+  }
+}
+
+variable "storage_images_blob_cors_rule" {
+  type = object({
+    allowed_headers    = optional(list(string), ["*"])
+    allowed_methods    = optional(list(string), ["GET", "HEAD"])
+    exposed_headers    = optional(list(string), ["ETag", "Content-Length", "Content-Type"])
+    max_age_in_seconds = optional(number, 86400)
+  })
+  description = "CORS rule applied to the images storage account blob service. Origins are controlled separately by storage_images_cors_origins."
+  default     = {}
+  nullable    = false
+
+  validation {
+    condition = (
+      length(var.storage_images_blob_cors_rule.allowed_headers) > 0
+      && length(var.storage_images_blob_cors_rule.allowed_methods) > 0
+      && var.storage_images_blob_cors_rule.max_age_in_seconds >= 0
+    )
+    error_message = "storage_images_blob_cors_rule must include at least one allowed header, at least one allowed method, and a non-negative max age."
+  }
+
+  validation {
+    condition = alltrue([
+      for method in var.storage_images_blob_cors_rule.allowed_methods :
+      contains(["DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "POST", "PUT"], method)
+    ])
+    error_message = "storage_images_blob_cors_rule.allowed_methods must contain only valid Azure Storage CORS methods."
+  }
+}
+
 variable "storage_images_cors_origins" {
   type        = list(string)
   description = "Allowed CORS origins for blob reads. Set to your Cloudflare-proxied domain(s) in production."
@@ -2884,6 +2937,48 @@ variable "storage_images_cors_origins" {
       origin == "*" || startswith(origin, "https://") || startswith(origin, "http://localhost") || startswith(origin, "http://127.0.0.1")
     ])
     error_message = "storage_images_cors_origins must contain at least one origin and each origin must be *, HTTPS, localhost, or 127.0.0.1."
+  }
+}
+
+variable "storage_images_containers" {
+  type = map(object({
+    name          = string
+    public_access = optional(string, "None")
+  }))
+  description = "Blob containers created in the images storage account."
+  default = {
+    images = {
+      name          = "images"
+      public_access = "None"
+    }
+  }
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for container in values(var.storage_images_containers) :
+      length(trimspace(container.name)) > 0
+      && contains(["None", "Blob", "Container"], container.public_access)
+    ])
+    error_message = "Each storage_images_containers entry must have a non-empty name and public_access of None, Blob, or Container."
+  }
+}
+
+variable "storage_images_role_definition_names" {
+  type = object({
+    api    = optional(string, "Storage Blob Data Reader")
+    seeder = optional(string, "Storage Blob Data Contributor")
+  })
+  description = "Azure RBAC role names assigned to workload identities for the images storage account."
+  default     = {}
+  nullable    = false
+
+  validation {
+    condition = (
+      length(trimspace(var.storage_images_role_definition_names.api)) > 0
+      && length(trimspace(var.storage_images_role_definition_names.seeder)) > 0
+    )
+    error_message = "storage_images_role_definition_names.api and .seeder must be non-empty."
   }
 }
 

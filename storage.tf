@@ -4,41 +4,36 @@ module "storage_images" {
   name                            = var.storage_images_account_name
   resource_group_name             = azurerm_resource_group.rg.name
   location                        = azurerm_resource_group.rg.location
-  account_tier                    = "Standard"
+  account_tier                    = var.storage_images_account_settings.account_tier
   account_replication_type        = var.storage_images_replication_type
-  allow_nested_items_to_be_public = false
-  public_network_access_enabled   = true
-  https_traffic_only_enabled      = true
-  min_tls_version                 = "TLS1_2"
-  shared_access_key_enabled       = false
+  allow_nested_items_to_be_public = var.storage_images_account_settings.allow_nested_items_to_be_public
+  public_network_access_enabled   = var.storage_images_account_settings.public_network_access_enabled
+  https_traffic_only_enabled      = var.storage_images_account_settings.https_traffic_only_enabled
+  min_tls_version                 = var.storage_images_account_settings.min_tls_version
+  shared_access_key_enabled       = var.storage_images_account_settings.shared_access_key_enabled
   enable_telemetry                = var.vnet_enable_telemetry
 
   blob_properties = {
     cors_rule = [
       {
-        allowed_headers    = ["*"]
-        allowed_methods    = ["GET", "HEAD"]
+        allowed_headers    = var.storage_images_blob_cors_rule.allowed_headers
+        allowed_methods    = var.storage_images_blob_cors_rule.allowed_methods
         allowed_origins    = var.storage_images_cors_origins
-        exposed_headers    = ["ETag", "Content-Length", "Content-Type"]
-        max_age_in_seconds = 86400
+        exposed_headers    = var.storage_images_blob_cors_rule.exposed_headers
+        max_age_in_seconds = var.storage_images_blob_cors_rule.max_age_in_seconds
       }
     ]
   }
 
-  containers = {
-    images = {
-      name          = "images"
-      public_access = "None"
-    }
-  }
+  containers = var.storage_images_containers
 
   role_assignments = {
     api_blob_reader = {
-      role_definition_id_or_name = "Storage Blob Data Reader"
+      role_definition_id_or_name = var.storage_images_role_definition_names.api
       principal_id               = module.api_identity.principal_id
     }
     seeder_blob_contributor = {
-      role_definition_id_or_name = "Storage Blob Data Contributor"
+      role_definition_id_or_name = var.storage_images_role_definition_names.seeder
       principal_id               = module.seeder_identity.principal_id
     }
   }

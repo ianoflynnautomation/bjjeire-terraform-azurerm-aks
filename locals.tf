@@ -86,14 +86,10 @@ locals {
       name         = "bjj-api-azuread-audience"
       content_type = "text/plain"
     }
-    # GitHub PAT with `read:packages` — consumed by `ghcr-pull-secret` ExternalSecret
-    # in bjj-app to authenticate Helm/image pulls from GHCR. Supplied via TF_VAR_ghcr_pat.
     ghcr_pat = {
       name         = "ghcr-pat"
       content_type = "text/plain"
     }
-    # MongoDB root password — auto-generated once and persisted in state. Rotating means
-    # rotating the mongo user, otherwise existing data becomes unreachable.
     bjj_mongodb_root_password = {
       name         = "bjj-mongodb-root-password"
       content_type = "text/plain"
