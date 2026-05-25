@@ -20,10 +20,30 @@ output "sops_key_id" {
 
 output "oauth2_proxy_client_id" {
   description = "The Azure Entra application client ID for OAuth2 Proxy"
-  value       = azuread_application.oauth2_proxy.client_id
+  value       = module.app_reg_oauth2_proxy.client_id
 }
 
 output "oauth2_proxy_application_id" {
   description = "The Azure Entra application object ID for OAuth2 Proxy"
-  value       = azuread_application.oauth2_proxy.id
+  value       = module.app_reg_oauth2_proxy.id
+}
+
+output "storage_images_primary_blob_endpoint" {
+  description = "Primary blob endpoint for the images storage account — use as Cloudflare origin"
+  value       = nonsensitive(module.storage_images.resource.primary_blob_endpoint)
+}
+
+output "storage_images_account_name" {
+  description = "Name of the images storage account"
+  value       = nonsensitive(module.storage_images.resource.name)
+}
+
+output "api_identity_client_id" {
+  description = "Client ID of the API workload identity — annotate the bjjeire-api ServiceAccount with this value"
+  value       = module.workload_identities.client_ids["api"]
+}
+
+output "cloudflare_zone_id" {
+  description = "ID of the managed Cloudflare zone. Null when cloudflare_manage_zone = false."
+  value       = module.cloudflare_zone.zone_id
 }

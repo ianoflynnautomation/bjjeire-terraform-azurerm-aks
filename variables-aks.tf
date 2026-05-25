@@ -1,91 +1,13 @@
-
-variable "shared_hub_vnet_name" {
-  description = "Name of the hub virtual network"
+variable "aks_ssh_key_algorithm" {
   type        = string
-  default     = "vnet-myaks-shared-swn-hub-00"
+  default     = "RSA"
+  description = "Algorithm for the tls_private_key generated for AKS node SSH access."
 }
 
-variable "subscription_id" {
-  description = "Name of the subscription"
-  type        = string
-}
-
-variable "private_email" {
-  type        = string
-  description = "private_email"
-  sensitive   = true
-}
-
-variable "cloudflare_api_token" {
-  type        = string
-  description = "The cloudflare_api_token"
-  sensitive   = true
-}
-
-variable "gh_flux_aks_token" {
-  type        = string
-  description = "The GitHub Flux/Runner Controller access token."
-  sensitive   = true
-}
-
-variable "grafana_admin_password" {
-  type        = string
-  description = "Grafana admin password"
-  sensitive   = true
-}
-
-variable "shared_rg_name" {
-  description = "Name of the resource group"
-  type        = string
-  default     = "rg-myaks-shared-swn-00"
-}
-
-variable "resource_group_name" {
-  type        = string
-  description = "The resource group where the resources will be deployed."
-}
-
-variable "github_org" {
-  type        = string
-  description = "The GitHub Organization or Username"
-}
-
-variable "github_repo" {
-  type        = string
-  description = "The repository name"
-}
-
-variable "environment" {
-  type        = string
-  description = "dev, staging, or prod"
-}
-
-variable "storage_account_name" {
-  type        = string
-  description = "Name of the storage account that contains state file"
-}
-
-variable "state_resource_group_name" {
-  type        = string
-  description = "The resource group where the state file is located"
-}
-
-variable "location" {
-  type        = string
-  default     = "switzerlandnorth"
-  description = <<DESCRIPTION
-(Optional) The location/region where the resources are created. Changing this forces a new resource to be created.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "location_short_name" {
-  type        = string
-  default     = "swn"
-  description = <<DESCRIPTION
-(Optional) The location/region short name where the resources are created. Changing this forces a new resource to be created.
-DESCRIPTION
-  nullable    = false
+variable "aks_ssh_key_rsa_bits" {
+  type        = number
+  default     = 4096
+  description = "RSA key length in bits for the AKS node SSH private key."
 }
 
 variable "aks_aci_connector_linux_enabled" {
@@ -141,7 +63,6 @@ variable "aks_agents_min_count" {
   default     = null
   description = "Minimum number of nodes in a pool"
 }
-
 
 variable "aks_agents_pool_drain_timeout_in_minutes" {
   type        = number
@@ -259,13 +180,11 @@ EOT
   nullable    = false
 }
 
-
 variable "aks_agents_pool_max_surge" {
   type        = string
   default     = "10%"
   description = "The maximum number or percentage of nodes which will be added to the Default Node Pool size during an upgrade."
 }
-
 
 variable "aks_agents_pool_name" {
   type        = string
@@ -274,13 +193,11 @@ variable "aks_agents_pool_name" {
   nullable    = false
 }
 
-
 variable "aks_agents_pool_node_soak_duration_in_minutes" {
   type        = number
   default     = 0
   description = "(Optional) The amount of time in minutes to wait after draining a node and before reimaging and moving on to next node. Defaults to 0."
 }
-
 
 variable "aks_agents_proximity_placement_group_id" {
   type        = string
@@ -288,13 +205,11 @@ variable "aks_agents_proximity_placement_group_id" {
   description = "(Optional) The ID of the Proximity Placement Group of the default Azure AKS agentpool (nodepool). Changing this forces a new resource to be created."
 }
 
-
 variable "aks_agents_size" {
   type        = string
   default     = "Standard_D2s_v3"
   description = "The default virtual machine size for the Kubernetes agents. Changing this without specifying `var.temporary_name_for_rotation` forces a new resource to be created."
 }
-
 
 variable "aks_agents_tags" {
   type        = map(string)
@@ -393,7 +308,6 @@ variable "aks_auto_scaler_profile_scale_down_delay_after_delete" {
   description = "How long after node deletion that scale down evaluation resumes. Defaults to the value used for `scan_interval`."
 }
 
-
 variable "aks_auto_scaler_profile_scale_down_delay_after_failure" {
   type        = string
   default     = "3m"
@@ -406,13 +320,11 @@ variable "aks_auto_scaler_profile_scale_down_unneeded" {
   description = "How long a node should be unneeded before it is eligible for scale down. Defaults to `10m`."
 }
 
-
 variable "aks_auto_scaler_profile_scale_down_unready" {
   type        = string
   default     = "20m"
   description = "How long an unready node should be unneeded before it is eligible for scale down. Defaults to `20m`."
 }
-
 
 variable "aks_auto_scaler_profile_scale_down_utilization_threshold" {
   type        = string
@@ -426,20 +338,17 @@ variable "aks_auto_scaler_profile_scan_interval" {
   description = "How often the AKS Cluster should be re-evaluated for scale up/down. Defaults to `10s`."
 }
 
-
 variable "aks_auto_scaler_profile_skip_nodes_with_local_storage" {
   type        = bool
   default     = true
   description = "If `true` cluster autoscaler will never delete nodes with pods with local storage, for example, EmptyDir or HostPath. Defaults to `true`."
 }
 
-
 variable "aks_auto_scaler_profile_skip_nodes_with_system_pods" {
   type        = bool
   default     = true
   description = "If `true` cluster autoscaler will never delete nodes with pods from kube-system (except for DaemonSet or mirror pods). Defaults to `true`."
 }
-
 
 variable "aks_automatic_channel_upgrade" {
   type        = string
@@ -462,13 +371,11 @@ variable "aks_automatic_channel_upgrade" {
   }
 }
 
-
 variable "aks_auto_scaling_enabled" {
   type        = bool
   default     = true
   description = "Enable node pool autoscaling"
 }
-
 
 variable "aks_azure_policy_enabled" {
   type        = bool
@@ -488,7 +395,6 @@ variable "aks_brown_field_application_gateway_for_ingress" {
     * `subnet_id` - (Required) The ID of the Subnet which the Application Gateway is connected to. Must be set when `create_role_assignments` is `true`.
   EOT
 }
-
 
 variable "aks_client_id" {
   type        = string
@@ -511,11 +417,15 @@ variable "aks_cluster_log_analytics_workspace_name" {
   description = "(Optional) The name of the Analytics workspace"
 }
 
-
 variable "aks_cluster_name" {
   type        = string
-  default     = null
-  description = "(Optional) The name for the AKS resources created in the specified Azure Resource Group. This variable overwrites the 'prefix' var (The 'prefix' var will still be applied to the dns_prefix if it is set)"
+  description = "Name for the AKS cluster. Required — embedded in NSG name (nsg.tf) and oauth2-proxy app registration display name (oauth2.tf), so null causes string-interpolation failures at plan/lint time. Used as the cluster_name passed to module.aks and to derive the oauth2-proxy app name."
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.aks_cluster_name)) > 0
+    error_message = "aks_cluster_name must be a non-empty string."
+  }
 }
 
 variable "aks_cluster_name_random_suffix" {
@@ -524,7 +434,6 @@ variable "aks_cluster_name_random_suffix" {
   description = "Whether to add a random suffix on Aks cluster's name or not. `azurerm_kubernetes_cluster` resource defined in this module is `create_before_destroy = true` implicity now(described [here](https://github.com/Azure/terraform-azurerm-aks/issues/389)), without this random suffix we'll not be able to recreate this cluster directly due to the naming conflict."
   nullable    = false
 }
-
 
 variable "aks_confidential_computing" {
   type = object({
@@ -539,7 +448,6 @@ variable "aks_cost_analysis_enabled" {
   default     = false
   description = "(Optional) Enable Cost Analysis."
 }
-
 
 variable "aks_create_monitor_data_collection_rule" {
   type        = bool
@@ -596,7 +504,6 @@ variable "aks_disk_encryption_set_id" {
   description = "(Optional) The ID of the Disk Encryption Set which should be used for the Nodes and Volumes. More information [can be found in the documentation](https://docs.microsoft.com/azure/aks/azure-disk-customer-managed-keys). Changing this forces a new resource to be created."
 }
 
-
 variable "aks_dns_prefix_private_cluster" {
   type        = string
   default     = null
@@ -628,7 +535,6 @@ EOT
     error_message = "One of `subnet_cidr` and `subnet_id` must be specified."
   }
 }
-
 
 variable "aks_http_proxy_config" {
   type = object({
@@ -677,7 +583,6 @@ variable "aks_image_cleaner_enabled" {
   description = "(Optional) Specifies whether Image Cleaner is enabled."
 }
 
-
 variable "aks_interval_before_cluster_update" {
   type        = string
   default     = "30s"
@@ -698,8 +603,6 @@ variable "aks_kms_enabled" {
   nullable    = false
 }
 
-
-
 variable "aks_kms_key_vault_key_id" {
   type        = string
   default     = null
@@ -716,7 +619,6 @@ variable "aks_kms_key_vault_network_access" {
     error_message = "Possible values are `Private` and `Public`"
   }
 }
-
 
 variable "aks_kubelet_identity" {
   type = object({
@@ -798,7 +700,6 @@ variable "aks_local_account_disabled" {
   description = "(Optional) - If `true` local accounts will be disabled. Defaults to `false`. See [the documentation](https://docs.microsoft.com/azure/aks/managed-aad#disable-local-accounts) for more information."
 }
 
-
 variable "aks_log_analytics_solution" {
   type = object({
     id = string
@@ -822,7 +723,6 @@ variable "aks_log_analytics_workspace" {
   default     = null
   description = "(Optional) Existing azurerm_log_analytics_workspace to attach azurerm_log_analytics_solution. Providing the config disables creation of azurerm_log_analytics_workspace."
 }
-
 
 variable "aks_log_analytics_workspace_allow_resource_only_permissions" {
   type        = bool
@@ -855,7 +755,6 @@ variable "aks_log_analytics_workspace_enabled" {
   nullable    = false
 }
 
-
 variable "aks_log_analytics_workspace_identity" {
   type = object({
     identity_ids = optional(set(string))
@@ -873,7 +772,6 @@ variable "aks_log_analytics_workspace_immediate_data_purge_on_30_days_enabled" {
   default     = null
   description = "(Optional) Whether to remove the data in the Log Analytics Workspace immediately after 30 days."
 }
-
 
 variable "aks_log_analytics_workspace_internet_ingestion_enabled" {
   type        = bool
@@ -898,7 +796,6 @@ variable "aks_log_analytics_workspace_reservation_capacity_in_gb_per_day" {
   default     = null
   description = "(Optional) The capacity reservation level in GB for this workspace. Possible values are `100`, `200`, `300`, `400`, `500`, `1000`, `2000` and `5000`."
 }
-
 
 variable "aks_log_analytics_workspace_resource_group_name" {
   type        = string
@@ -969,7 +866,6 @@ variable "aks_maintenance_window_auto_upgrade" {
 EOT
 }
 
-
 variable "aks_maintenance_window_node_os" {
   type = object({
     day_of_month = optional(number)
@@ -1011,7 +907,6 @@ variable "aks_microsoft_defender_enabled" {
   description = "(Optional) Is Microsoft Defender on the cluster enabled? Requires `var.log_analytics_workspace_enabled` to be `true` to set this variable to `true`."
   nullable    = false
 }
-
 
 variable "aks_monitor_data_collection_rule_data_sources_syslog_facilities" {
   type        = list(string)
@@ -1059,7 +954,6 @@ variable "aks_nat_gateway_profile" {
 EOT
 }
 
-
 variable "aks_net_profile_dns_service_ip" {
   type        = string
   default     = null
@@ -1084,14 +978,11 @@ variable "aks_net_profile_service_cidr" {
   description = "(Optional) The Network Range used by the Kubernetes service. Changing this forces a new resource to be created."
 }
 
-
 variable "aks_msi_auth_for_monitoring_enabled" {
   type        = bool
   default     = null
   description = "(Optional) Is managed identity authentication for monitoring enabled?"
 }
-
-
 
 variable "aks_network_contributor_role_assigned_subnet_ids" {
   type        = map(string)
@@ -1118,7 +1009,6 @@ variable "aks_network_policy" {
   default     = null
   description = " (Optional) Sets up network policy to be used with Azure CNI. Network policy allows us to control the traffic flow between pods. Currently supported values are calico and azure. Changing this forces a new resource to be created."
 }
-
 
 variable "aks_node_network_profile" {
   type = object({
@@ -1396,14 +1286,12 @@ variable "aks_oidc_issuer_enabled" {
   description = "Enable or Disable the OIDC issuer URL. Defaults to false."
 }
 
-
 variable "aks_oms_agent_enabled" {
   type        = bool
   default     = true
   description = "Enable OMS Agent Addon."
   nullable    = false
 }
-
 
 variable "aks_only_critical_addons_enabled" {
   type        = bool
@@ -1422,7 +1310,6 @@ variable "aks_orchestrator_version" {
   default     = null
   description = "Specify which Kubernetes release to use for the orchestration layer. The default used is the latest Kubernetes version available in the region"
 }
-
 
 variable "aks_os_disk_size_gb" {
   type        = number
@@ -1485,7 +1372,6 @@ variable "aks_public_ssh_key" {
   description = "A custom ssh key to control access to the AKS cluster. Changing this forces a new resource to be created."
 }
 
-
 variable "aks_role_based_access_control_enabled" {
   type        = bool
   default     = false
@@ -1504,7 +1390,6 @@ variable "aks_scale_down_mode" {
   default     = "Delete"
   description = "(Optional) Specifies the autoscaling behaviour of the Kubernetes Cluster. If not specified, it defaults to `Delete`. Possible values include `Delete` and `Deallocate`. Changing this forces a new resource to be created."
 }
-
 
 variable "aks_secret_rotation_enabled" {
   type        = bool
@@ -1607,7 +1492,6 @@ variable "aks_ultra_ssd_enabled" {
   description = "(Optional) Used to specify whether the UltraSSD is enabled in the Default Node Pool. Defaults to false."
 }
 
-
 variable "aks_vnet_subnet" {
   type = object({
     id = string
@@ -1650,7 +1534,6 @@ variable "aks_workload_identity_enabled" {
   description = "Enable or Disable Workload Identity. Defaults to false."
 }
 
-
 variable "aks_upgrade_override" {
   type = object({
     force_upgrade_enabled = bool
@@ -1666,9 +1549,8 @@ variable "aks_upgrade_override" {
 variable "aks_rbac_aad_admin_group_object_ids" {
   type        = list(string)
   default     = null
-  description = "Object ID of groups with admin access."
+  description = "DEPRECATED: object IDs of groups with AKS admin access. Prefer aks_admin_group_display_names — opaque GUIDs make plan diffs unreadable and don't catch stale references."
 }
-
 
 variable "aks_rbac_aad_azure_rbac_enabled" {
   type        = bool
@@ -1676,1111 +1558,8 @@ variable "aks_rbac_aad_azure_rbac_enabled" {
   description = "(Optional) Is Role Based Access Control based on Azure AD enabled?"
 }
 
-
 variable "aks_host_encryption_enabled" {
   type        = bool
   default     = false
   description = "Enable Host Encryption for default node pool. Encryption at host feature must be enabled on the subscription: https://docs.microsoft.com/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli"
-}
-
-# variable "vnet_parent_id" {
-#   type        = string
-#   description = <<DESCRIPTION
-# (Optional) The ID of the resource group where the virtual network will be deployed.
-# DESCRIPTION
-
-#   validation {
-#     condition     = can(regex("^/subscriptions/[^/]+/resourceGroups/[^/]+$", var.vnet_parent_id))
-#     error_message = "parent_id must be a valid resource group ID."
-#   }
-# }
-
-variable "vnet_address_space" {
-  type        = set(string)
-  default     = null
-  description = <<DESCRIPTION
-  (Optional) The address spaces applied to the virtual network. You can supply more than one address space.
-  Either address_space or ipam_pools must be specified, but not both.
-  DESCRIPTION
-
-  validation {
-    condition     = (var.vnet_address_space != null && var.vnet_ipam_pools == null) || (var.vnet_address_space == null && var.vnet_ipam_pools != null)
-    error_message = "Either address_space or ipam_pools must be specified, but not both."
-  }
-}
-
-variable "vnet_bgp_community" {
-  type        = string
-  default     = null
-  description = <<DESCRIPTION
-(Optional) The BGP community to send to the virtual network gateway.
-DESCRIPTION
-}
-
-variable "vnet_ddos_protection_plan" {
-  type = object({
-    id     = string
-    enable = bool
-  })
-  default     = null
-  description = <<DESCRIPTION
-Specifies an AzureNetwork DDoS Protection Plan.
-
-- `id`: The ID of the DDoS Protection Plan. (Required)
-- `enable`: Enables or disables the DDoS Protection Plan on the Virtual Network. (Required)
-DESCRIPTION
-}
-
-variable "vnet_diagnostic_settings" {
-  type = map(object({
-    name                                     = optional(string, null)
-    log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
-    metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, "Dedicated")
-    workspace_resource_id                    = optional(string, null)
-    storage_account_resource_id              = optional(string, null)
-    event_hub_authorization_rule_resource_id = optional(string, null)
-    event_hub_name                           = optional(string, null)
-    marketplace_partner_resource_id          = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-  A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-  - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
-  - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
-  - `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
-  - `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
-  - `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
-  - `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
-  - `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
-  - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
-  - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-  - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
-  DESCRIPTION
-  nullable    = false
-
-  validation {
-    condition     = alltrue([for _, v in var.vnet_diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
-    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.vnet_diagnostic_settings :
-        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
-      ]
-    )
-    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
-  }
-}
-
-variable "vnet_enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "vnet_dns_servers" {
-  type = object({
-    dns_servers = list(string)
-  })
-  default     = null
-  description = <<DESCRIPTION
-(Optional) Specifies a list of IP addresses representing DNS servers.
-
-- `dns_servers`: List of IP addresses of DNS servers.
-DESCRIPTION
-}
-
-variable "role_assignments" {
-  type = map(object({
-    role_definition_id_or_name             = string
-    principal_id                           = string
-    description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false)
-    condition                              = optional(string, null)
-    condition_version                      = optional(string, null)
-    delegated_managed_identity_resource_id = optional(string, null)
-    principal_type                         = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-  (Optional) A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
-  - `principal_id` - The ID of the principal to assign the role to.
-  - `description` - (Optional) The description of the role assignment.
-  - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
-  - `condition` - (Optional) The condition which will be used to scope the role assignment.
-  - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
-  - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
-  - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
-
-  > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
-  DESCRIPTION
-  nullable    = false
-}
-
-
-
-variable "vnet_enable_vm_protection" {
-  type        = bool
-  default     = false
-  description = <<DESCRIPTION
-(Optional) Enable VM Protection for the virtual network. Defaults to false.
-DESCRIPTION
-}
-
-variable "vnet_encryption" {
-  type = object({
-    enabled     = bool
-    enforcement = string
-  })
-  default     = null
-  description = <<DESCRIPTION
-(Optional) Specifies the encryption settings for the virtual network.
-
-- `enabled`: Specifies whether encryption is enabled for the virtual network.
-- `enforcement`: Specifies the enforcement mode for the virtual network. Possible values are `AllowUnencrypted` and `DropUnencrypted`.
-
-Note: When using `DropUnencrypted` enforcement, the `AllowDropUnecryptedVnet` subscription feature must be registered first. See the `vnet-encryption-setup` example for details.
-DESCRIPTION
-
-  validation {
-    condition     = var.vnet_encryption != null ? contains(["AllowUnencrypted", "DropUnencrypted"], var.vnet_encryption.enforcement) : true
-    error_message = "Encryption enforcement must be one of: 'AllowUnencrypted', 'DropUnencrypted'."
-  }
-}
-
-variable "vnet_extended_location" {
-  type = object({
-    name = string
-    type = string
-  })
-  default     = null
-  description = <<DESCRIPTION
-(Optional) Specifies the extended location of the virtual network.
-
-- `name`: The name of the extended location.
-- `type`: The type of the extended location.
-DESCRIPTION
-
-  validation {
-    condition     = var.vnet_extended_location != null ? contains("EdgeZone", var.vnet_extended_location.type) : true
-    error_message = "Extended location type must be EdgeZone"
-  }
-}
-
-variable "vnet_flow_timeout_in_minutes" {
-  type        = number
-  default     = null
-  description = <<DESCRIPTION
-(Optional) The flow timeout in minutes for the virtual network. Defaults to 4.
-DESCRIPTION
-}
-
-
-variable "vnet_ipam_pools" {
-  type = list(object({
-    id            = string
-    prefix_length = number
-  }))
-  default     = null
-  description = <<DESCRIPTION
-(Optional) Specifies the IPAM settings for requesting an address_space from an IP Pool. Only one IPv4 and one IPv6 pool can be specified.
-
-- `id`: The ID of the IPAM pool.
-- `prefix_length`: The length of the /XX CIDR range to request. for example 24 for a /24. Prefix length must be between 2 and 29 for IPv4 and 48 and 64 for IPv6.
-DESCRIPTION
-
-  validation {
-    condition = alltrue([
-      for ipam_pool in var.vnet_ipam_pools != null ? var.vnet_ipam_pools : [] : can(regex("^\\/subscriptions\\/[\\w-]+\\/resourceGroups\\/[\\w-]+\\/providers\\/Microsoft\\.Network\\/networkManagers\\/[\\w-]+\\/ipamPools\\/[\\w-]+$", ipam_pool.id))
-    ]) || var.vnet_ipam_pools == null
-    error_message = "IPAM pool ID must be a valid ipamPools resource ID."
-  }
-  validation {
-    condition = alltrue([
-      for ipam_pool in var.vnet_ipam_pools != null ? var.vnet_ipam_pools : [] : (ipam_pool.prefix_length >= 2 && ipam_pool.prefix_length <= 29) || (ipam_pool.prefix_length >= 48 && ipam_pool.prefix_length <= 64)
-    ]) || var.vnet_ipam_pools == null
-    error_message = "Prefix length must be between 2 and 29 for IPv4 and 48 and 64 for IPv6."
-  }
-  validation {
-    condition = alltrue([
-      for ipam_pool in var.vnet_ipam_pools != null ? var.vnet_ipam_pools : [] : length(ipam_pool) >= 1 && length(ipam_pool) <= 2
-    ]) || var.vnet_ipam_pools == null
-    error_message = "Only one or two IPAM pools can be specified."
-  }
-  validation {
-    condition = length([
-      for ipam_pool in var.vnet_ipam_pools != null ? var.vnet_ipam_pools : [] : ipam_pool if ipam_pool.prefix_length == 64
-    ]) <= 1 || var.vnet_ipam_pools == null
-    error_message = "Only one IPv6 pool can be specified."
-  }
-  validation {
-    condition = length([
-      for ipam_pool in var.vnet_ipam_pools != null ? var.vnet_ipam_pools : [] : ipam_pool if ipam_pool.prefix_length >= 2 && ipam_pool.prefix_length <= 29
-    ]) <= 1 || var.vnet_ipam_pools == null
-    error_message = "Only one IPv4 pool can be specified."
-  }
-}
-
-variable "vnet_lock" {
-  type = object({
-    kind = string
-    name = optional(string, null)
-  })
-  default     = null
-  description = <<DESCRIPTION
-  (Optional) Controls the Resource Lock configuration for this resource. The following properties can be specified:
-
-  - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
-  - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
-  DESCRIPTION
-
-  validation {
-    condition     = var.vnet_lock != null ? contains(["CanNotDelete", "ReadOnly"], var.vnet_lock.kind) : true
-    error_message = "Lock kind must be either `\"CanNotDelete\"` or `\"ReadOnly\"`."
-  }
-}
-
-variable "vnet_name" {
-  type        = string
-  default     = null
-  description = <<DESCRIPTION
-(Optional) The name of the virtual network to create.  If null, existing_virtual_network must be supplied.
-DESCRIPTION
-}
-
-variable "system_subnet_name" {
-  type        = string
-  default     = "SystemSubnet"
-  description = "The name of the system subnet."
-}
-
-variable "system_subnet_address_prefixes" {
-  type        = list(string)
-  default     = ["10.20.0.0/20"]
-  description = "The address prefixes for the system subnet."
-}
-
-variable "workload_subnet_name" {
-  type        = string
-  default     = "RunnerSubnet"
-  description = "The name of the workload/runner subnet."
-}
-
-variable "workload_subnet_address_prefixes" {
-  type        = list(string)
-  default     = ["10.20.16.0/20"]
-  description = "The address prefixes for the workload/runner subnet."
-}
-
-variable "vnet_retry" {
-  type = object({
-    error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
-    interval_seconds     = optional(number, 10)
-    max_interval_seconds = optional(number, 180)
-  })
-  default     = {}
-  description = "Retry configuration for the resource operations"
-}
-
-variable "vnet_subnets" {
-  type = map(object({
-    address_prefix   = optional(string)
-    address_prefixes = optional(list(string))
-    name             = string
-    ipam_pools = optional(list(object({
-      pool_id         = string
-      prefix_length   = optional(number)
-      allocation_type = optional(string, "Static")
-    })))
-    nat_gateway = optional(object({
-      id = string
-    }))
-    network_security_group = optional(object({
-      id = string
-    }))
-    private_endpoint_network_policies             = optional(string, "Enabled")
-    private_link_service_network_policies_enabled = optional(bool, true)
-    route_table = optional(object({
-      id = string
-    }))
-    service_endpoint_policies = optional(map(object({
-      id = string
-    })))
-    service_endpoints_with_location = optional(list(object({
-      service   = string
-      locations = optional(list(string), ["*"])
-    })))
-    default_outbound_access_enabled = optional(bool, false)
-    sharing_scope                   = optional(string, null)
-    delegations = optional(list(object({
-      name = string
-      service_delegation = object({
-        name = string
-      })
-    })))
-    timeouts = optional(object({
-      create = optional(string, "30m")
-      read   = optional(string, "5m")
-      update = optional(string, "30m")
-      delete = optional(string, "30m")
-    }), {})
-    retry = optional(object({
-      error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
-      interval_seconds     = optional(number, 10)
-      max_interval_seconds = optional(number, 180)
-    }), {})
-    role_assignments = optional(map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      principal_type                         = optional(string, null)
-    })))
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-(Optional) A map of subnets to create
-
- - `address_prefix` - (Optional) The address prefix to use for the subnet. One of `address_prefix`, `address_prefixes`, or `ipam_pools` must be specified.
- - `address_prefixes` - (Optional) The address prefixes to use for the subnet. One of `address_prefix`, `address_prefixes`, or `ipam_pools` must be specified.
- - `ipam_pools` - (Optional) IPAM pools to allocate address space from. When specified, the subnet will request address space from these pools. Each pool configuration supports:
-   - `pool_id`: Resource ID of the IPAM pool to allocate from
-   - `prefix_length`: The CIDR prefix length for this subnet (e.g., 24 for /24, 26 for /26)
-   - `allocation_type`: Type of allocation - "Static" (default) or "Dynamic"
- - `enforce_private_link_endpoint_network_policies` -
- - `enforce_private_link_service_network_policies` -
- - `name` - (Required) The name of the subnet. Changing this forces a new resource to be created.
- - `default_outbound_access_enabled` - (Optional) Whether to allow internet access from the subnet. Defaults to `false`.
- - `private_endpoint_network_policies` - (Optional) Enable or Disable network policies for the private endpoint on the subnet. Possible values are `Disabled`, `Enabled`, `NetworkSecurityGroupEnabled` and `RouteTableEnabled`. Defaults to `Enabled`.
- - `private_link_service_network_policies_enabled` - (Optional) Enable or Disable network policies for the private link service on the subnet. Setting this to `true` will **Enable** the policy and setting this to `false` will **Disable** the policy. Defaults to `true`.
- - `service_endpoint_policies` - (Optional) The map of objects with IDs of Service Endpoint Policies to associate with the subnet.
- - `service_endpoints_with_location` - (Optional) Service endpoints with location restrictions to associate with the subnet. Each service endpoint is an object with the following properties:
-   - `service` - (Required) The service name. Possible values include: `Microsoft.AzureActiveDirectory`, `Microsoft.AzureCosmosDB`, `Microsoft.ContainerRegistry`, `Microsoft.EventHub`, `Microsoft.KeyVault`, `Microsoft.ServiceBus`, `Microsoft.Sql`, `Microsoft.Storage`, `Microsoft.Storage.Global` and `Microsoft.Web`.
-   - `locations` - (Optional) A set of Azure region names where the service endpoint should apply. Default is `["*"]` to apply to all regions.
-
- ---
- `delegation` (This setting is deprecated, use `delegations` instead) supports the following:
- - `name` - (Required) A name for this delegation.
-  - `service_delegation` - (Required) The service delegation to associate with the subnet. This is an object with a `name` property that specifies the name of the service delegation.
-
-`delegations` supports the following:
- - `name` - (Required) A name for this delegation.
-  - `service_delegation` - (Required) The service delegation to associate with the subnet. This is an object with a `name` property that specifies the name of the service delegation.
-
- ---
- `nat_gateway` supports the following:
- - `id` - (Optional) The ID of the NAT Gateway which should be associated with the Subnet. Changing this forces a new resource to be created.
-
- ---
- `network_security_group` supports the following:
- - `id` - (Optional) The ID of the Network Security Group which should be associated with the Subnet. Changing this forces a new association to be created.
-
- ---
- `route_table` supports the following:
- - `id` - (Optional) The ID of the Route Table which should be associated with the Subnet. Changing this forces a new association to be created.
-
- ---
- `timeouts` (Optional) supports the following:
- - `create` - (Defaults to 30 minutes) Used when creating the Subnet.
- - `delete` - (Defaults to 30 minutes) Used when deleting the Subnet.
- - `read` - (Defaults to 5 minutes) Used when retrieving the Subnet.
- - `update` - (Defaults to 30 minutes) Used when updating the Subnet.
-
----
-  `retry` (optional) supports the following:
-  - `error_message_regex` - (Optional) A list of regular expressions to match against the error message returned by the API. If any of these match, the retry will be triggered.
-  - `interval_seconds` - (Optional) The number of seconds to wait between retries. Defaults to 10.
-  - `max_interval_seconds` - (Optional) The maximum number of seconds to wait between retries. Defaults to 180.
-
- ---
- `role_assignments` supports the following:
- - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
- - `principal_id` - The ID of the principal to assign the role to.
- - `description` - (Optional) The description of the role assignment.
- - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
- - `condition` - (Optional) The condition which will be used to scope the role assignment.
- - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
- - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
- - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
-
-DESCRIPTION
-
-  validation {
-    condition = alltrue([
-      for _, subnet in var.vnet_subnets :
-      # IPAM subnets need ipam_pools configured
-      subnet.ipam_pools != null ||
-      # Non-IPAM subnets need one of these address configurations
-      subnet.address_prefix != null || subnet.address_prefixes != null
-    ])
-    error_message = "Each subnet must specify one of: ipam_pools (for IPAM allocation), address_prefix, or address_prefixes."
-  }
-  validation {
-    condition = alltrue([
-      for _, subnet in var.vnet_subnets :
-      # For IPAM subnets, only ipam_pools should be specified (not static addresses)
-      subnet.ipam_pools != null ? (
-        subnet.address_prefix == null && subnet.address_prefixes == null
-        ) : (
-        # For non-IPAM subnets, exactly one address method should be specified
-        (subnet.address_prefix != null && subnet.address_prefixes == null) ||
-        (subnet.address_prefix == null && subnet.address_prefixes != null)
-      )
-    ])
-    error_message = "IPAM subnets should only specify ipam_pools. Non-IPAM subnets must specify exactly one of: address_prefix or address_prefixes."
-  }
-}
-
-
-variable "vnet_peerings" {
-  type = map(object({
-    name                               = string
-    remote_virtual_network_resource_id = string
-    allow_forwarded_traffic            = optional(bool, false)
-    allow_gateway_transit              = optional(bool, false)
-    allow_virtual_network_access       = optional(bool, true)
-    do_not_verify_remote_gateways      = optional(bool, false)
-    enable_only_ipv6_peering           = optional(bool, false)
-    peer_complete_vnets                = optional(bool, true)
-    local_peered_address_spaces = optional(list(object({
-      address_prefix = string
-    })))
-    remote_peered_address_spaces = optional(list(object({
-      address_prefix = string
-    })))
-    local_peered_subnets = optional(list(object({
-      subnet_name = string
-    })))
-    remote_peered_subnets = optional(list(object({
-      subnet_name = string
-    })))
-    use_remote_gateways                   = optional(bool, false)
-    create_reverse_peering                = optional(bool, false)
-    reverse_name                          = optional(string)
-    reverse_allow_forwarded_traffic       = optional(bool, false)
-    reverse_allow_gateway_transit         = optional(bool, false)
-    reverse_allow_virtual_network_access  = optional(bool, true)
-    reverse_do_not_verify_remote_gateways = optional(bool, false)
-    reverse_enable_only_ipv6_peering      = optional(bool, false)
-    reverse_peer_complete_vnets           = optional(bool, true)
-    reverse_local_peered_address_spaces = optional(list(object({
-      address_prefix = string
-    })))
-    reverse_remote_peered_address_spaces = optional(list(object({
-      address_prefix = string
-    })))
-    reverse_local_peered_subnets = optional(list(object({
-      subnet_name = string
-    })))
-    reverse_remote_peered_subnets = optional(list(object({
-      subnet_name = string
-    })))
-    reverse_use_remote_gateways        = optional(bool, false)
-    sync_remote_address_space_enabled  = optional(bool, false)
-    sync_remote_address_space_triggers = optional(any, null)
-    timeouts = optional(object({
-      create = optional(string, "30m")
-      read   = optional(string, "5m")
-      update = optional(string, "30m")
-      delete = optional(string, "30m")
-    }), {})
-    retry = optional(object({
-      error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
-      interval_seconds     = optional(number, 10)
-      max_interval_seconds = optional(number, 180)
-    }), {})
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-(Optional) A map of virtual network peering configurations. Each entry specifies a remote virtual network by ID and includes settings for traffic forwarding, gateway transit, and remote gateways usage.
-
-- `name`: The name of the virtual network peering configuration.
-- `remote_virtual_network_resource_id`: The resource ID of the remote virtual network.
-- `allow_forwarded_traffic`: (Optional) Enables forwarded traffic between the virtual networks. Defaults to false.
-- `allow_gateway_transit`: (Optional) Enables gateway transit for the virtual networks. Defaults to false.
-- `allow_virtual_network_access`: (Optional) Enables access from the local virtual network to the remote virtual network. Defaults to true.
-- `do_not_verify_remote_gateways`: (Optional) Disables the verification of remote gateways for the virtual networks. Defaults to false.
-- `enable_only_ipv6_peering`: (Optional) Enables only IPv6 peering for the virtual networks. Defaults to false.
-- `peer_complete_vnets`: (Optional) Enables the peering of complete virtual networks for the virtual networks. Defaults to false.
-- `local_peered_address_spaces`: (Optional) The address spaces to peer with the remote virtual network. Only used when `peer_complete_vnets` is set to true.
-- `remote_peered_address_spaces`: (Optional) The address spaces to peer from the remote virtual network. Only used when `peer_complete_vnets` is set to true.
-- `local_peered_subnets`: (Optional) The subnets to peer with the remote virtual network. Only used when `peer_complete_vnets` is set to true.
-- `remote_peered_subnets`: (Optional) The subnets to peer from the remote virtual network. Only used when `peer_complete_vnets` is set to true.
-- `use_remote_gateways`: (Optional) Enables the use of remote gateways for the virtual networks. Defaults to false.
-- `create_reverse_peering`: (Optional) Creates the reverse peering to form a complete peering.
-- `reverse_name`: (Optional) If you have selected `create_reverse_peering`, then this name will be used for the reverse peer.
-- `reverse_allow_forwarded_traffic`: (Optional) If you have selected `create_reverse_peering`, enables forwarded traffic between the virtual networks. Defaults to false.
-- `reverse_allow_gateway_transit`: (Optional) If you have selected `create_reverse_peering`, enables gateway transit for the virtual networks. Defaults to false.
-- `reverse_allow_virtual_network_access`: (Optional) If you have selected `create_reverse_peering`, enables access from the local virtual network to the remote virtual network. Defaults to true.
-- `reverse_do_not_verify_remote_gateways`: (Optional) If you have selected `create_reverse_peering`, disables the verification of remote gateways for the virtual networks. Defaults to false.
-- `reverse_enable_only_ipv6_peering`: (Optional) If you have selected `create_reverse_peering`, enables only IPv6 peering for the virtual networks. Defaults to false.
-- `reverse_peer_complete_vnets`: (Optional) If you have selected `create_reverse_peering`, enables the peering of complete virtual networks for the virtual networks. Defaults to false.
-- `reverse_local_peered_address_spaces`: (Optional) If you have selected `create_reverse_peering`, the address spaces to peer with the remote virtual network. Only used when `reverse_peer_complete_vnets` is set to true.
-- `reverse_remote_peered_address_spaces`: (Optional) If you have selected `create_reverse_peering`, the address spaces to peer from the remote virtual network. Only used when `reverse_peer_complete_vnets` is set to true.
-- `reverse_local_peered_subnets`: (Optional) If you have selected `create_reverse_peering`, the subnets to peer with the remote virtual network. Only used when `reverse_peer_complete_vnets` is set to true.
-- `reverse_remote_peered_subnets`: (Optional) If you have selected `create_reverse_peering`, the subnets to peer from the remote virtual network. Only used when `reverse_peer_complete_vnets` is set to true.
-- `reverse_use_remote_gateways`: (Optional) If you have selected `create_reverse_peering`, enables the use of remote gateways for the virtual networks. Defaults to false.
-- `sync_remote_address_space_enabled`: (Optional) If the peering sync status changes a plan will be created to sync the peering address space with an azapi update resource. Defaults to false.
-- `sync_remote_address_space_triggers`: (Optional) A value that when changed will trigger a resync of the remote address space. This must be supplied if `sync_remote_address_space_enabled` is `true`. Defaults to null.
-
- ---
- `timeouts` (Optional) supports the following:
- - `create` - (Defaults to 30 minutes) Used when creating the Subnet.
- - `delete` - (Defaults to 30 minutes) Used when deleting the Subnet.
- - `read` - (Defaults to 5 minutes) Used when retrieving the Subnet.
- - `update` - (Defaults to 30 minutes) Used when updating the Subnet.
-
----
-  `retry` (Optional) supports the following:
-  - `error_message_regex` - (Optional) A list of regular expressions to match against the error message returned by the API. If any of these match, the retry will be triggered.
-  - `interval_seconds` - (Optional) The number of seconds to wait between retries. Defaults to 10.
-  - `max_interval_seconds` - (Optional) The maximum number of seconds to wait between retries. Defaults to 180.
-  - `multiplier` - (Optional) The multiplier to apply to the interval between retries Defaults to 1.5.
-
-DESCRIPTION
-  nullable    = false
-}
-
-
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "(Optional) Tags of the resource."
-}
-
-variable "timeouts" {
-  type = object({
-    create = optional(string, "30m")
-    read   = optional(string, "5m")
-    update = optional(string, "30m")
-    delete = optional(string, "30m")
-  })
-  default     = {}
-  description = "Timeouts for the resource operations"
-}
-
-variable "kv_name" {
-  type        = string
-  description = "The name of the Key Vault."
-
-  validation {
-    condition     = can(regex("^[a-zA-Z0-9-]{3,24}$", var.kv_name))
-    error_message = "The name must be between 3 and 24 characters long and can only contain letters, numbers and dashes."
-  }
-  validation {
-    error_message = "The name must not contain two consecutive dashes"
-    condition     = !can(regex("--", var.kv_name))
-  }
-  validation {
-    error_message = "The name must start with a letter"
-    condition     = can(regex("^[a-zA-Z]", var.kv_name))
-  }
-  validation {
-    error_message = "The name must end with a letter or number"
-    condition     = can(regex("[a-zA-Z0-9]$", var.kv_name))
-  }
-}
-
-# variable "tenant_id" {
-#   type        = string
-#   description = "The Azure tenant ID used for authenticating requests to Key Vault. You can use the `azurerm_client_config` data source to retrieve it."
-
-#   validation {
-#     condition     = can(regex("^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$", var.tenant_id))
-#     error_message = "The tenant ID must be a valid GUID. Letters must be lowercase."
-#   }
-# }
-
-
-variable "kv_contacts" {
-  type = map(object({
-    email = string
-    name  = optional(string, null)
-    phone = optional(string, null)
-  }))
-  default     = {}
-  description = "A map of contacts for the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time."
-}
-
-
-variable "kv_diagnostic_settings" {
-  type = map(object({
-    name                                     = optional(string, null)
-    log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
-    metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, "Dedicated")
-    workspace_resource_id                    = optional(string, null)
-    storage_account_resource_id              = optional(string, null)
-    event_hub_authorization_rule_resource_id = optional(string, null)
-    event_hub_name                           = optional(string, null)
-    marketplace_partner_resource_id          = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
-- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
-- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
-- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
-- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
-- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
-- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
-- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
-- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
-DESCRIPTION
-  nullable    = false
-
-  validation {
-    condition     = alltrue([for _, v in var.kv_diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
-    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.kv_diagnostic_settings :
-        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
-      ]
-    )
-    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
-  }
-}
-
-variable "kv_enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "kv_enabled_for_deployment" {
-  type        = bool
-  default     = false
-  description = "Specifies whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the vault."
-}
-
-variable "kv_enabled_for_disk_encryption" {
-  type        = bool
-  default     = false
-  description = "Specifies whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."
-}
-
-variable "kv_enabled_for_template_deployment" {
-  type        = bool
-  default     = false
-  description = "Specifies whether Azure Resource Manager is permitted to retrieve secrets from the vault."
-}
-
-variable "kv_keys" {
-  type = map(object({
-    name     = string
-    key_type = string
-    key_opts = optional(list(string), ["sign", "verify"])
-
-    key_size        = optional(number, null)
-    curve           = optional(string, null)
-    not_before_date = optional(string, null)
-    expiration_date = optional(string, null)
-    tags            = optional(map(any), null)
-
-    role_assignments = optional(map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      principal_type                         = optional(string, null)
-    })), {})
-
-    rotation_policy = optional(object({
-      automatic = optional(object({
-        time_after_creation = optional(string, null)
-        time_before_expiry  = optional(string, null)
-      }), null)
-      expire_after         = optional(string, null)
-      notify_before_expiry = optional(string, null)
-    }), null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of keys to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `name` - The name of the key.
-- `key_type` - The type of the key. Possible values are `EC` and `RSA`.
-- `key_opts` - A list of key options. Possible values are `decrypt`, `encrypt`, `sign`, `unwrapKey`, `verify`, and `wrapKey`.
-- `key_size` - The size of the key. Required for `RSA` keys.
-- `curve` - The curve of the key. Required for `EC` keys.  Possible values are `P-256`, `P-256K`, `P-384`, and `P-521`. The API will default to `P-256` if nothing is specified.
-- `not_before_date` - The not before date of the key.
-- `expiration_date` - The expiration date of the key.
-- `tags` - A mapping of tags to assign to the key.
-- `rotation_policy` - The rotation policy of the key.
-  - `automatic` - The automatic rotation policy of the key.
-    - `time_after_creation` - The time after creation of the key before it is automatically rotated.
-    - `time_before_expiry` - The time before expiry of the key before it is automatically rotated.
-  - `expire_after` - The time after which the key expires.
-  - `notify_before_expiry` - The time before expiry of the key when notification emails will be sent.
-
-Supply role assignments in the same way as for `var.role_assignments`.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "kv_legacy_access_policies" {
-  type = map(object({
-    object_id               = string
-    application_id          = optional(string, null)
-    certificate_permissions = optional(set(string), [])
-    key_permissions         = optional(set(string), [])
-    secret_permissions      = optional(set(string), [])
-    storage_permissions     = optional(set(string), [])
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of legacy access policies to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-Requires `var.legacy_access_policies_enabled` to be `true`.
-
-- `object_id` - (Required) The object ID of the principal to assign the access policy to.
-- `application_id` - (Optional) The object ID of an Application in Azure Active Directory. Changing this forces a new resource to be created.
-- `certifiate_permissions` - (Optional) A list of certificate permissions. Possible values are: `Backup`, `Create`, `Delete`, `DeleteIssuers`, `Get`, `GetIssuers`, `Import`, `List`, `ListIssuers`, `ManageContacts`, `ManageIssuers`, `Purge`, `Recover`, `Restore`, `SetIssuers`, and `Update`.
-- `key_permissions` - (Optional) A list of key permissions. Possible value are: `Backup`, `Create`, `Decrypt`, `Delete`, `Encrypt`, `Get`, `Import`, `List`, `Purge`, `Recover`, `Restore`, `Sign`, `UnwrapKey`, `Update`, `Verify`, `WrapKey`, `Release`, `Rotate`, `GetRotationPolicy`, and `SetRotationPolicy`.
-- `secret_permissions` - (Optional) A list of secret permissions. Possible values are: `Backup`, `Delete`, `Get`, `List`, `Purge`, `Recover`, `Restore`, and `Set`.
-- `storage_permissions` - (Optional) A list of storage permissions. Possible values are: `Backup`, `Delete`, `DeleteSAS`, `Get`, `GetSAS`, `List`, `ListSAS`, `Purge`, `Recover`, `RegenerateKey`, `Restore`, `Set`, `SetSAS`, and `Update`.
-DESCRIPTION
-  nullable    = false
-
-  validation {
-    error_message = "Object ID must be a valid GUID."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : can(regex("^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$", v.object_id))])
-  }
-  validation {
-    error_message = "Application ID must be null or a valid GUID."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : v.application_id == null || can(regex("^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$", v.application_id))])
-  }
-  validation {
-    error_message = "Certificate permissions must be a set composed of: `Backup`, `Create`, `Delete`, `DeleteIssuers`, `Get`, `GetIssuers`, `Import`, `List`, `ListIssuers`, `ManageContacts`, `ManageIssuers`, `Purge`, `Recover`, `Restore`, `SetIssuers`, and `Update`."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : setintersection(["Backup", "Create", "Delete", "DeleteIssuers", "Get", "GetIssuers", "Import", "List", "ListIssuers", "ManageContacts", "ManageIssuers", "Purge", "Recover", "Restore", "SetIssuers", "Update"], v.certificate_permissions) == v.certificate_permissions])
-  }
-  validation {
-    error_message = "Key permissions must be a set composed of: `Backup`, `Create`, `Decrypt`, `Delete`, `Encrypt`, `Get`, `Import`, `List`, `Purge`, `Recover`, `Restore`, `Sign`, `UnwrapKey`, `Update`, `Verify`, `WrapKey`, `Release`, `Rotate`, `GetRotationPolicy`, and `SetRotationPolicy`."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : setintersection(["Backup", "Create", "Decrypt", "Delete", "Encrypt", "Get", "Import", "List", "Purge", "Recover", "Restore", "Sign", "UnwrapKey", "Update", "Verify", "WrapKey", "Release", "Rotate", "GetRotationPolicy", "SetRotationPolicy"], v.key_permissions) == v.key_permissions])
-  }
-  validation {
-    error_message = "Secret permissions must be a set composed of: `Backup`, `Delete`, `Get`, `List`, `Purge`, `Recover`, `Restore`, and `Set`."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : setintersection(["Backup", "Delete", "Get", "List", "Purge", "Recover", "Restore", "Set"], v.secret_permissions) == v.secret_permissions])
-  }
-  validation {
-    error_message = "Storage permissions must be a set composed of: `Backup`, `Delete`, `DeleteSAS`, `Get`, `GetSAS`, `List`, `ListSAS`, `Purge`, `Recover`, `RegenerateKey`, `Restore`, `Set`, `SetSAS`, and `Update`."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : setintersection(["Backup", "Delete", "DeleteSAS", "Get", "GetSAS", "List", "ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update"], v.storage_permissions) == v.storage_permissions])
-  }
-  validation {
-    error_message = "At least one permission must be set."
-    condition     = alltrue([for _, v in var.kv_legacy_access_policies : length(v.certificate_permissions) + length(v.key_permissions) + length(v.secret_permissions) + length(v.storage_permissions) > 0])
-  }
-}
-
-variable "kv_legacy_access_policies_enabled" {
-  type        = bool
-  default     = false
-  description = "Specifies whether legacy access policies are enabled for this Key Vault. Prevents use of Azure RBAC for data plane."
-  nullable    = false
-}
-
-
-variable "kv_lock" {
-  type = object({
-    kind = string
-    name = optional(string, null)
-  })
-  default     = null
-  description = "The lock level to apply to the Key Vault. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`."
-
-  validation {
-    condition     = var.kv_lock != null ? contains(["CanNotDelete", "ReadOnly"], var.kv_lock.kind) : true
-    error_message = "Lock kind must be either `\"CanNotDelete\"` or `\"ReadOnly\"`."
-  }
-}
-
-variable "kv_network_acls" {
-  type = object({
-    bypass                     = optional(string, "None")
-    default_action             = optional(string, "Deny")
-    ip_rules                   = optional(list(string), [])
-    virtual_network_subnet_ids = optional(list(string), [])
-  })
-  default     = {}
-  description = <<DESCRIPTION
-The network ACL configuration for the Key Vault.
-If not specified then the Key Vault will be created with a firewall that blocks access.
-Specify `null` to create the Key Vault with no firewall.
-
-- `bypass` - (Optional) Should Azure Services bypass the ACL. Possible values are `AzureServices` and `None`. Defaults to `None`.
-- `default_action` - (Optional) The default action when no rule matches. Possible values are `Allow` and `Deny`. Defaults to `Deny`.
-- `ip_rules` - (Optional) A list of IP rules in CIDR format. Defaults to `[]`.
-- `virtual_network_subnet_ids` - (Optional) When using with Service Endpoints, a list of subnet IDs to associate with the Key Vault. Defaults to `[]`.
-DESCRIPTION
-
-  validation {
-    condition     = var.kv_network_acls == null ? true : contains(["AzureServices", "None"], var.kv_network_acls.bypass)
-    error_message = "The bypass value must be either `AzureServices` or `None`."
-  }
-  validation {
-    condition     = var.kv_network_acls == null ? true : contains(["Allow", "Deny"], var.kv_network_acls.default_action)
-    error_message = "The default_action value must be either `Allow` or `Deny`."
-  }
-}
-
-variable "kv_private_endpoints" {
-  type = map(object({
-    name = optional(string, null)
-    role_assignments = optional(map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      principal_type                         = optional(string, null)
-    })), {})
-    lock = optional(object({
-      kind = string
-      name = optional(string, null)
-    }), null)
-    tags                                    = optional(map(string), null)
-    subnet_resource_id                      = string
-    private_dns_zone_group_name             = optional(string, "default")
-    private_dns_zone_resource_ids           = optional(set(string), [])
-    application_security_group_associations = optional(map(string), {})
-    private_service_connection_name         = optional(string, null)
-    network_interface_name                  = optional(string, null)
-    location                                = optional(string, null)
-    resource_group_name                     = optional(string, null)
-    ip_configurations = optional(map(object({
-      name               = string
-      private_ip_address = string
-    })), {})
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
-- `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-- `tags` - (Optional) A mapping of tags to assign to the private endpoint.
-- `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
-- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
-- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
-- `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-- `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
-- `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
-- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Key Vault.
-- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  - `name` - The name of the IP configuration.
-  - `private_ip_address` - The private IP address of the IP configuration.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "kv_private_endpoints_manage_dns_zone_group" {
-  type        = bool
-  default     = true
-  description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
-  nullable    = false
-}
-
-variable "kv_public_network_access_enabled" {
-  type        = bool
-  default     = true
-  description = "Specifies whether public access is permitted."
-}
-
-variable "kv_purge_protection_enabled" {
-  type        = bool
-  default     = true
-  description = "Specifies whether protection against purge is enabled for this Key Vault. Note once enabled this cannot be disabled."
-}
-
-
-
-variable "kv_role_assignments" {
-  type = map(object({
-    role_definition_id_or_name             = string
-    principal_id                           = string
-    description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false)
-    condition                              = optional(string, null)
-    condition_version                      = optional(string, null)
-    delegated_managed_identity_resource_id = optional(string, null)
-    principal_type                         = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of role assignments to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
-- `principal_id` - The ID of the principal to assign the role to.
-- `description` - The description of the role assignment.
-- `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
-- `condition` - The condition which will be used to scope the role assignment.
-- `condition_version` - The version of the condition syntax. If you are using a condition, valid values are '2.0'.
-
-> Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "kv_secrets" {
-  type = map(object({
-    name            = string
-    content_type    = optional(string, null)
-    tags            = optional(map(any), null)
-    not_before_date = optional(string, null)
-    expiration_date = optional(string, null)
-
-    role_assignments = optional(map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      principal_type                         = optional(string, null)
-    })), {})
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of secrets to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `name` - The name of the secret.
-- `content_type` - The content type of the secret.
-- `tags` - A mapping of tags to assign to the secret.
-- `not_before_date` - The not before date of the secret.
-- `expiration_date` - The expiration date of the secret.
-
-Supply role assignments in the same way as for `var.role_assignments`.
-
-> Note: the `value` of the secret is supplied via the `var.secrets_value` variable. Make sure to use the same map key.
-DESCRIPTION
-  nullable    = false
-}
-
-
-variable "kv_secrets_value" {
-  type        = map(string)
-  default     = null
-  description = <<DESCRIPTION
-A map of secret keys to values.
-The map key is the supplied input to `var.secrets`.
-The map value is the secret value.
-
-This is a separate variable to `var.secrets` because it is sensitive and therefore cannot be used in a `for_each` loop.
-DESCRIPTION
-  sensitive   = true
-}
-
-
-variable "kv_sku_name" {
-  type        = string
-  default     = "standard"
-  description = "The SKU name of the Key Vault. Default is `premium`. Possible values are `standard` and `premium`."
-
-  validation {
-    condition     = contains(["standard", "premium"], var.kv_sku_name)
-    error_message = "The SKU name must be either `standard` or `premium`."
-  }
-}
-
-variable "kv_soft_delete_retention_days" {
-  type        = number
-  default     = null
-  description = <<DESCRIPTION
-The number of days that items should be retained for once soft-deleted. This value can be between 7 and 90 (the default) days.
-DESCRIPTION
-
-  validation {
-    condition     = var.kv_soft_delete_retention_days == null ? true : var.kv_soft_delete_retention_days >= 7 && var.kv_soft_delete_retention_days <= 90
-    error_message = "Value must be between 7 and 90."
-  }
-  validation {
-    condition     = var.kv_soft_delete_retention_days == null ? true : ceil(var.kv_soft_delete_retention_days) == var.kv_soft_delete_retention_days
-    error_message = "Value must be an integer."
-  }
-}
-
-variable "kv_wait_for_rbac_before_contact_operations" {
-  type = object({
-    create  = optional(string, "30s")
-    destroy = optional(string, "0s")
-  })
-  default     = {}
-  description = <<DESCRIPTION
-This variable controls the amount of time to wait before performing contact operations.
-It only applies when `var.role_assignments` and `var.contacts` are both set.
-This is useful when you are creating role assignments on the key vault and immediately creating keys in it.
-The default is 30 seconds for create and 0 seconds for destroy.
-DESCRIPTION
-}
-
-variable "kv_wait_for_rbac_before_key_operations" {
-  type = object({
-    create  = optional(string, "30s")
-    destroy = optional(string, "0s")
-  })
-  default     = {}
-  description = <<DESCRIPTION
-This variable controls the amount of time to wait before performing key operations.
-It only applies when `var.role_assignments` and `var.keys` are both set.
-This is useful when you are creating role assignments on the key vault and immediately creating keys in it.
-The default is 30 seconds for create and 0 seconds for destroy.
-DESCRIPTION
-}
-
-variable "kv_wait_for_rbac_before_secret_operations" {
-  type = object({
-    create  = optional(string, "30s")
-    destroy = optional(string, "0s")
-  })
-  default     = {}
-  description = <<DESCRIPTION
-This variable controls the amount of time to wait before performing secret operations.
-It only applies when `var.role_assignments` and `var.secrets` are both set.
-This is useful when you are creating role assignments on the key vault and immediately creating secrets in it.
-The default is 30 seconds for create and 0 seconds for destroy.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "cluster_domain" {
-  type        = string
-  default     = "cluster.local"
-  description = <<DESCRIPTION
-(Optional) The DNS domain name used within the Kubernetes cluster for service discovery.
-Defaults to cluster.local.
-DESCRIPTION
 }

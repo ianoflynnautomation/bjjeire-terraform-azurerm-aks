@@ -94,6 +94,8 @@ credentials.tfrc.json
 *.key
 *.p12
 *.pfx
+*.private-key.*
+*.private-key
 id_rsa
 id_dsa
 id_ecdsa
