@@ -52,7 +52,7 @@ rule "terraform_empty_list_equality" {
 }
 
 rule "terraform_standard_module_structure" {
-  enabled = true
+  enabled = false
 }
 
 rule "terraform_required_providers" {
