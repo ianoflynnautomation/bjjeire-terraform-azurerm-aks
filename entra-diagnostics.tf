@@ -4,21 +4,40 @@ variable "entra_diagnostics_log_analytics_workspace_id" {
   default     = ""
 }
 
+variable "entra_diagnostics_name_prefix" {
+  type        = string
+  default     = "entra-to-law-"
+  description = "Prefix for the azurerm_monitor_aad_diagnostic_setting name. Final name: <prefix><environment>."
+}
+
+variable "entra_diagnostics_log_categories" {
+  type = list(string)
+  default = [
+    "SignInLogs",
+    "AuditLogs",
+    "NonInteractiveUserSignInLogs",
+    "ServicePrincipalSignInLogs",
+    "ManagedIdentitySignInLogs",
+    "ADFSSignInLogs",
+    "RiskyUsers",
+    "UserRiskEvents",
+    "RiskyServicePrincipals",
+    "ServicePrincipalRiskEvents",
+    "ProvisioningLogs",
+  ]
+  description = "Entra ID diagnostic log categories to forward. Drop entries to reduce ingestion cost — see Microsoft docs for the full catalogue."
+}
+
 resource "azurerm_monitor_aad_diagnostic_setting" "entra_to_law" {
   count = var.entra_diagnostics_log_analytics_workspace_id == "" ? 0 : 1
 
-  name                       = "entra-to-law-${var.environment}"
+  name                       = "${var.entra_diagnostics_name_prefix}${var.environment}"
   log_analytics_workspace_id = var.entra_diagnostics_log_analytics_workspace_id
 
-  enabled_log { category = "SignInLogs" }
-  enabled_log { category = "AuditLogs" }
-  enabled_log { category = "NonInteractiveUserSignInLogs" }
-  enabled_log { category = "ServicePrincipalSignInLogs" }
-  enabled_log { category = "ManagedIdentitySignInLogs" }
-  enabled_log { category = "ADFSSignInLogs" }
-  enabled_log { category = "RiskyUsers" }
-  enabled_log { category = "UserRiskEvents" }
-  enabled_log { category = "RiskyServicePrincipals" }
-  enabled_log { category = "ServicePrincipalRiskEvents" }
-  enabled_log { category = "ProvisioningLogs" }
+  dynamic "enabled_log" {
+    for_each = toset(var.entra_diagnostics_log_categories)
+    content {
+      category = enabled_log.value
+    }
+  }
 }

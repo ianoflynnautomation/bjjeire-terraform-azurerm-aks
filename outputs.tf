@@ -40,5 +40,10 @@ output "storage_images_account_name" {
 
 output "api_identity_client_id" {
   description = "Client ID of the API workload identity — annotate the bjjeire-api ServiceAccount with this value"
-  value       = module.api_identity.client_id
+  value       = module.workload_identities.client_ids["api"]
+}
+
+output "cloudflare_zone_id" {
+  description = "ID of the managed Cloudflare zone. Null when cloudflare_manage_zone = false."
+  value       = module.cloudflare_zone.zone_id
 }

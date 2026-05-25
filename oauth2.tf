@@ -1,6 +1,6 @@
 locals {
-  oauth2_proxy_app_name     = "oauth2-proxy-${var.aks_cluster_name}"
-  oauth2_proxy_callback_uri = "https://oauth2.${var.cluster_domain}/oauth2/callback"
+  oauth2_proxy_app_name     = "${var.oauth2_proxy_app_name_prefix}${var.aks_cluster_name}"
+  oauth2_proxy_callback_uri = "https://${var.oauth2_proxy_callback_subdomain}.${var.cluster_domain}${var.oauth2_proxy_callback_path}"
 }
 
 module "app_reg_oauth2_proxy" {
@@ -11,20 +11,20 @@ module "app_reg_oauth2_proxy" {
   web_redirect_uris = [local.oauth2_proxy_callback_uri]
 
   optional_claims = {
-    id_token = ["groups"]
+    id_token = var.oauth2_proxy_optional_id_token_claims
   }
 
-  group_membership_claims = ["SecurityGroup"]
+  group_membership_claims = var.oauth2_proxy_group_membership_claims
 }
 
 resource "time_rotating" "oauth2_proxy_secret" {
-  rotation_days = 90
+  rotation_days = var.oauth2_proxy_secret_rotation_days
 }
 
 resource "azuread_application_password" "oauth2_proxy" {
   application_id = module.app_reg_oauth2_proxy.id
-  display_name   = "oauth2-proxy-secret"
-  end_date       = timeadd(time_rotating.oauth2_proxy_secret.rotation_rfc3339, "720h")
+  display_name   = var.oauth2_proxy_secret_display_name
+  end_date       = timeadd(time_rotating.oauth2_proxy_secret.rotation_rfc3339, var.oauth2_proxy_secret_validity)
 
   rotate_when_changed = {
     rotation = time_rotating.oauth2_proxy_secret.id
@@ -32,6 +32,6 @@ resource "azuread_application_password" "oauth2_proxy" {
 }
 
 resource "random_password" "oauth2_cookie_secret" {
-  length  = 32
+  length  = var.oauth2_proxy_cookie_secret_length
   special = false
 }
