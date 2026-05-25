@@ -9,7 +9,7 @@
 # Entra group OID and/or email domain that gets the allow rule.
 
 locals {
-  _has_access_include_rule = (
+  has_access_include_rule = (
     var.internal_access_group_object_id != "" ||
     var.internal_access_email_domain != "" ||
     length(var.internal_access_emails) > 0
@@ -18,7 +18,7 @@ locals {
     local.cloudflare_idp_enabled &&
     var.cluster_domain != "" &&
     var.cluster_domain != var.cloudflare_zone_name &&
-    local._has_access_include_rule
+    local.has_access_include_rule
   )
   cloudflare_idp_id = local.cloudflare_idp_enabled ? cloudflare_zero_trust_access_identity_provider.entra_id[0].id : ""
 

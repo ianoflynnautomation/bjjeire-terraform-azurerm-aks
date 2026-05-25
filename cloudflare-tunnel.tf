@@ -15,11 +15,11 @@ data "cloudflare_accounts" "this" {
 }
 
 locals {
-  _accounts_lookup = try(data.cloudflare_accounts.this[0].result, [])
+  accounts_lookup = try(data.cloudflare_accounts.this[0].result, [])
   cloudflare_account_id = (
     var.cloudflare_account_id != ""
     ? var.cloudflare_account_id
-    : (length(local._accounts_lookup) > 0 ? local._accounts_lookup[0].id : "")
+    : (length(local.accounts_lookup) > 0 ? local.accounts_lookup[0].id : "")
   )
   tunnel_origin = var.tunnel_origin_service_url != "" ? var.tunnel_origin_service_url : var.cloudflare_tunnel_origin_default_url
 }
