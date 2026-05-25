@@ -49,7 +49,7 @@ variable "requested_access_token_version" {
   default     = null
 
   validation {
-    condition     = var.requested_access_token_version == null || contains([1, 2], var.requested_access_token_version)
+    condition     = var.requested_access_token_version == null ? true : contains([1, 2], var.requested_access_token_version)
     error_message = "requested_access_token_version must be 1 or 2."
   }
 }

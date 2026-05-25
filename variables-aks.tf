@@ -419,8 +419,13 @@ variable "aks_cluster_log_analytics_workspace_name" {
 
 variable "aks_cluster_name" {
   type        = string
-  default     = null
-  description = "(Optional) The name for the AKS resources created in the specified Azure Resource Group. This variable overwrites the 'prefix' var (The 'prefix' var will still be applied to the dns_prefix if it is set)"
+  description = "Name for the AKS cluster. Required — embedded in NSG name (nsg.tf) and oauth2-proxy app registration display name (oauth2.tf), so null causes string-interpolation failures at plan/lint time. Used as the cluster_name passed to module.aks and to derive the oauth2-proxy app name."
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.aks_cluster_name)) > 0
+    error_message = "aks_cluster_name must be a non-empty string."
+  }
 }
 
 variable "aks_cluster_name_random_suffix" {
