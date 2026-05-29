@@ -1,13 +1,3 @@
-terraform {
-  required_version = ">= 1.9.0, < 2.0.0"
-  required_providers {
-    azuread = {
-      source  = "hashicorp/azuread"
-      version = "~> 3.0"
-    }
-  }
-}
-
 resource "azuread_application" "this" {
   display_name     = var.display_name
   sign_in_audience = var.sign_in_audience

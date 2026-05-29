@@ -1,10 +1,3 @@
-# Cloudflare Zero Trust organization (account-wide singleton).
-#
-# The team domain (<name>.cloudflareaccess.com) is a Cloudflare account-level
-# setting, not per-env. Only the prod env owns it (gated on cloudflare_manage_zone
-# like the rest of the account-level Cloudflare resources). Dev/staging only
-# READ the team name from var.cloudflare_team_name to build IdP redirect URIs.
-
 resource "cloudflare_zero_trust_organization" "this" {
   count = var.cloudflare_manage_zone && var.cloudflare_team_name != "" && local.cloudflare_account_id != "" ? 1 : 0
 

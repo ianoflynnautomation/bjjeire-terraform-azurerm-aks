@@ -1,15 +1,3 @@
-# Cloudflare Tunnel — origin-less ingress for the cluster.
-#
-# Creates the tunnel, its config (ingress rules → istio-ingress), and the
-# single DNS CNAME pointing var.cluster_domain at the tunnel. The tunnel
-# token is captured and stored in Key Vault as 'cloudflare-tunnel-token',
-# which the in-cluster cloudflared deployment reads via external-secrets.
-#
-# DNS exception: this is the ONLY cloudflare_dns_record allowed in this
-# repo (see cloudflare.tf header). The tunnel CNAME cannot be reconciled
-# by external-dns because it points to <tunnel-id>.cfargotunnel.com, not
-# to a Kubernetes Service.
-
 data "cloudflare_accounts" "this" {
   count = var.enable_cloudflare_tunnel && var.cloudflare_account_id == "" ? 1 : 0
 }

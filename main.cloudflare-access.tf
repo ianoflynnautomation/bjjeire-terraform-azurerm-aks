@@ -1,13 +1,3 @@
-# Cloudflare Zero Trust Access policy for non-public environments.
-#
-# Scope: created only when the Entra IdP is provisioned AND cluster_domain
-# is a subdomain (e.g. dev.bjjeire.com). Prod (bjjeire.com == zone apex)
-# intentionally has no Access app — production is public.
-#
-# Everything below is fully Terraform-managed: account ID, IdP, tunnel, and
-# policy. Only thing the operator still needs to populate per env is the
-# Entra group OID and/or email domain that gets the allow rule.
-
 locals {
   has_access_include_rule = (
     var.internal_access_group_object_id != "" ||

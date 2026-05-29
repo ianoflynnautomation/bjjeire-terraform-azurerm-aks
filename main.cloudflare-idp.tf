@@ -1,13 +1,3 @@
-# Cloudflare Zero Trust identity provider — Entra ID (Azure AD).
-#
-# Creates the Entra App Registration that Cloudflare uses to OIDC-auth users,
-# then registers it as a Cloudflare Zero Trust identity provider. The IdP ID
-# is consumed by cloudflare-access.tf to gate self-hosted apps.
-#
-# Group claims: enabling support_groups = true lets the Access policy match on
-# Entra group Object IDs (var.internal_access_group_object_id). Make sure the
-# group is a Security group with members assigned in Entra ID.
-
 locals {
   cloudflare_idp_enabled = var.enable_cloudflare_tunnel && local.cloudflare_account_id != ""
 
