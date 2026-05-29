@@ -1,112 +1,47 @@
-data "cloudflare_accounts" "this" {
-  count = var.enable_cloudflare_tunnel && var.cloudflare_account_id == "" ? 1 : 0
-}
+module "cloudflare_tunnel" {
+  source = "./modules/cloudflare-tunnel"
 
-locals {
-  accounts_lookup = try(data.cloudflare_accounts.this[0].result, [])
-  cloudflare_account_id = (
-    var.cloudflare_account_id != ""
-    ? var.cloudflare_account_id
-    : (length(local.accounts_lookup) > 0 ? local.accounts_lookup[0].id : "")
-  )
-  tunnel_origin = var.tunnel_origin_service_url != "" ? var.tunnel_origin_service_url : var.cloudflare_tunnel_origin_default_url
-}
+  enabled    = var.enable_cloudflare_tunnel
+  account_id = local.cloudflare_account_id
+  zone_name  = var.cloudflare_zone_name
 
-resource "random_password" "tunnel_secret" {
-  count   = var.enable_cloudflare_tunnel ? 1 : 0
-  length  = var.cloudflare_tunnel_secret_length
-  special = false
-}
-
-resource "cloudflare_zero_trust_tunnel_cloudflared" "this" {
-  count = var.enable_cloudflare_tunnel ? 1 : 0
-
-  account_id    = local.cloudflare_account_id
   name          = "${var.cloudflare_tunnel_name_prefix}${var.environment}"
-  tunnel_secret = base64encode(random_password.tunnel_secret[0].result)
   config_src    = var.cloudflare_tunnel_config_src
+  secret_length = var.cloudflare_tunnel_secret_length
 
-  lifecycle {
-    precondition {
-      condition     = local.cloudflare_account_id != ""
-      error_message = "Could not resolve a Cloudflare account ID. Either set var.cloudflare_account_id explicitly in tfvars, OR grant the API token 'Account Settings: Read' so the data.cloudflare_accounts lookup succeeds."
-    }
-  }
+  origin_url       = var.tunnel_origin_service_url != "" ? var.tunnel_origin_service_url : var.cloudflare_tunnel_origin_default_url
+  cluster_domain   = var.cluster_domain
+  no_tls_verify    = var.cloudflare_tunnel_no_tls_verify
+  fallback_service = var.cloudflare_tunnel_fallback_service
+
+  dns_record_type      = var.cloudflare_tunnel_dns_record_type
+  dns_proxied          = var.cloudflare_tunnel_dns_proxied
+  dns_ttl              = var.cloudflare_tunnel_dns_ttl
+  dns_comment          = "${var.cloudflare_tunnel_dns_comment_prefix}${var.environment}"
+  dns_wildcard_comment = "${var.cloudflare_tunnel_dns_wildcard_comment_prefix}${var.environment}"
 }
 
-data "cloudflare_zero_trust_tunnel_cloudflared_token" "this" {
-  count = var.enable_cloudflare_tunnel ? 1 : 0
-
-  account_id = local.cloudflare_account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.this[0].id
+moved {
+  from = random_password.tunnel_secret
+  to   = module.cloudflare_tunnel.random_password.tunnel_secret
 }
 
-resource "cloudflare_zero_trust_tunnel_cloudflared_config" "this" {
-  count = var.enable_cloudflare_tunnel ? 1 : 0
-
-  account_id = local.cloudflare_account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.this[0].id
-
-  config = {
-    ingress = concat(
-      [
-        {
-          hostname = var.cluster_domain
-          service  = local.tunnel_origin
-          origin_request = {
-            no_tls_verify      = var.cloudflare_tunnel_no_tls_verify
-            http_host_header   = var.cluster_domain
-            origin_server_name = var.cluster_domain
-          }
-        },
-        {
-          hostname = "*.${var.cluster_domain}"
-          service  = local.tunnel_origin
-          origin_request = {
-            no_tls_verify = var.cloudflare_tunnel_no_tls_verify
-            # SNI = the actual incoming subdomain. cloudflared substitutes the
-            # request hostname; gateway picks the *.${cluster_domain} listener.
-            origin_server_name = "*.${var.cluster_domain}"
-          }
-        },
-      ],
-      [
-        {
-          service = var.cloudflare_tunnel_fallback_service
-        }
-      ],
-    )
-  }
+moved {
+  from = cloudflare_zero_trust_tunnel_cloudflared.this
+  to   = module.cloudflare_tunnel.cloudflare_zero_trust_tunnel_cloudflared.this
 }
 
-data "cloudflare_zone" "this" {
-  count = var.enable_cloudflare_tunnel ? 1 : 0
-
-  filter = {
-    name = var.cloudflare_zone_name
-  }
+moved {
+  from = cloudflare_zero_trust_tunnel_cloudflared_config.this
+  to   = module.cloudflare_tunnel.cloudflare_zero_trust_tunnel_cloudflared_config.this
 }
 
-resource "cloudflare_dns_record" "tunnel" {
-  count = var.enable_cloudflare_tunnel ? 1 : 0
-
-  zone_id = data.cloudflare_zone.this[0].zone_id
-  name    = var.cluster_domain
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.this[0].id}.cfargotunnel.com"
-  type    = var.cloudflare_tunnel_dns_record_type
-  proxied = var.cloudflare_tunnel_dns_proxied
-  ttl     = var.cloudflare_tunnel_dns_ttl
-  comment = "${var.cloudflare_tunnel_dns_comment_prefix}${var.environment}"
+moved {
+  from = cloudflare_dns_record.tunnel
+  to   = module.cloudflare_tunnel.cloudflare_dns_record.tunnel
 }
 
-resource "cloudflare_dns_record" "tunnel_wildcard" {
-  count = var.enable_cloudflare_tunnel ? 1 : 0
-
-  zone_id = data.cloudflare_zone.this[0].zone_id
-  name    = "*.${var.cluster_domain}"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.this[0].id}.cfargotunnel.com"
-  type    = var.cloudflare_tunnel_dns_record_type
-  proxied = var.cloudflare_tunnel_dns_proxied
-  ttl     = var.cloudflare_tunnel_dns_ttl
-  comment = "${var.cloudflare_tunnel_dns_wildcard_comment_prefix}${var.environment}"
+moved {
+  from = cloudflare_dns_record.tunnel_wildcard
+  to   = module.cloudflare_tunnel.cloudflare_dns_record.tunnel_wildcard
 }

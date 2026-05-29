@@ -7,7 +7,3 @@ resource "cloudflare_zero_trust_organization" "this" {
   is_ui_read_only                    = var.cloudflare_org_is_ui_read_only
   user_seat_expiration_inactive_time = var.cloudflare_user_seat_expiration_inactive_time
 }
-
-locals {
-  cloudflare_team_name = var.cloudflare_team_name
-}

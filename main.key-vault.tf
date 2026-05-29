@@ -84,7 +84,7 @@ locals {
     # (e.g. tunnel pre-existing and managed manually).
     cloudflare_tunnel_token = (
       var.enable_cloudflare_tunnel
-      ? data.cloudflare_zero_trust_tunnel_cloudflared_token.this[0].token
+      ? module.cloudflare_tunnel.token
       : var.cloudflare_tunnel_token
     )
     private_email                = var.private_email
