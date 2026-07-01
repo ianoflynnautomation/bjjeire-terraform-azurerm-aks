@@ -23,8 +23,8 @@ variable "budget_time_grain" {
 
 variable "budget_start_date" {
   type        = string
-  default     = "2026-05-01T00:00:00Z"
-  description = "Budget start date in RFC3339 format. Must be the first day of the CURRENT month or a future month. Azure rejects past start dates on create. Once set, Azure also rejects changes — pair with a lifecycle ignore_changes on time_period if you don't want drift after the month rolls over."
+  default     = null
+  description = "Budget start date in RFC3339 format. Must be the first day of the CURRENT month or a future month — Azure rejects past start dates on create. When null, the module defaults to the first of the current month (computed at plan time). Once the budget exists Azure rejects changes; the module ignores time_period drift."
 }
 
 variable "budget_notification_thresholds" {

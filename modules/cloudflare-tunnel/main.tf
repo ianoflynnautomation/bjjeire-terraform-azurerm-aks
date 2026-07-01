@@ -36,6 +36,17 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "this" {
   config = {
     ingress = concat(
       [
+        for h in var.extra_hostnames : {
+          hostname = h
+          service  = var.origin_url
+          origin_request = {
+            no_tls_verify      = var.no_tls_verify
+            http_host_header   = h
+            origin_server_name = h
+          }
+        }
+      ],
+      [
         {
           hostname = var.cluster_domain
           service  = var.origin_url
@@ -95,4 +106,16 @@ resource "cloudflare_dns_record" "tunnel_wildcard" {
   proxied = var.dns_proxied
   ttl     = var.dns_ttl
   comment = var.dns_wildcard_comment
+}
+
+resource "cloudflare_dns_record" "tunnel_extra" {
+  for_each = var.enabled ? toset(var.extra_hostnames) : []
+
+  zone_id = data.cloudflare_zone.this[0].zone_id
+  name    = each.value
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.this[0].id}.cfargotunnel.com"
+  type    = var.dns_record_type
+  proxied = var.dns_proxied
+  ttl     = var.dns_ttl
+  comment = var.dns_extra_comment
 }

@@ -18,18 +18,20 @@ variable "environment" {
 
 variable "name_prefixes" {
   type = object({
-    api = string
-    spa = string
+    api   = string
+    spa   = string
+    tests = string
   })
-  description = "Environment-agnostic display name prefixes for the API and SPA app registrations."
+  description = "Environment-agnostic display name prefixes for the API, SPA, and tests app registrations."
   nullable    = false
 
   validation {
     condition = (
       length(trimspace(var.name_prefixes.api)) > 0
       && length(trimspace(var.name_prefixes.spa)) > 0
+      && length(trimspace(var.name_prefixes.tests)) > 0
     )
-    error_message = "name_prefixes.api and .spa must be non-empty."
+    error_message = "name_prefixes.api, .spa, and .tests must be non-empty."
   }
 }
 
@@ -80,9 +82,30 @@ variable "api_app_roles" {
     allowed_member_types = optional(list(string), ["User"])
     enabled              = optional(bool, true)
   }))
-  description = "Application roles exposed by the API app registration."
+  description = <<-EOT
+  Application roles exposed by the API app registration. The map MUST include a
+  `tests_invoke` entry whose `value` becomes the role name in the `roles` claim
+  on tests-client tokens; the tests service principal is granted this role.
+  EOT
   default     = {}
   nullable    = false
+
+  validation {
+    condition     = contains(keys(var.api_app_roles), "tests_invoke")
+    error_message = "api_app_roles must include a tests_invoke entry — the tests SP role assignment wires it explicitly."
+  }
+}
+
+variable "tests_password_display_name" {
+  type        = string
+  default     = "tests-client-secret"
+  description = "display_name of the azuread_application_password attached to the tests app registration. Its value is the client secret CI/local tests use for the client-credentials flow."
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.tests_password_display_name)) > 0
+    error_message = "tests_password_display_name must be non-empty."
+  }
 }
 
 variable "api_optional_claims" {

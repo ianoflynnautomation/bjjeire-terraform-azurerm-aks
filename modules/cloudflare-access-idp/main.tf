@@ -11,7 +11,8 @@ locals {
     length(var.access_include_emails) > 0
   )
 
-  create_access = var.access_enabled && var.idp_enabled && local.has_access_include_rule
+  create_access                = var.access_enabled && var.idp_enabled && local.has_access_include_rule
+  create_tests_service_token   = local.create_access && trimspace(var.tests_service_token_name) != ""
 }
 
 # ----- Entra app registration + secret + SPN + delegated grant -----
@@ -119,10 +120,16 @@ resource "cloudflare_zero_trust_access_application" "this" {
 
   destinations = var.access_destinations
 
-  policies = [{
-    id         = cloudflare_zero_trust_access_policy.internal[0].id
-    precedence = var.access_policy_precedence
-  }]
+  policies = concat(
+    [{
+      id         = cloudflare_zero_trust_access_policy.internal[0].id
+      precedence = var.access_policy_precedence
+    }],
+    local.create_tests_service_token ? [{
+      id         = cloudflare_zero_trust_access_policy.tests_service_token[0].id
+      precedence = var.tests_service_token_policy_precedence
+    }] : [],
+  )
 }
 
 resource "cloudflare_zero_trust_access_policy" "internal" {
@@ -146,4 +153,25 @@ resource "cloudflare_zero_trust_access_policy" "internal" {
       for e in var.access_include_emails : { email = { email = e } }
     ] : [],
   )
+}
+
+resource "cloudflare_zero_trust_access_service_token" "tests" {
+  count = local.create_tests_service_token ? 1 : 0
+
+  account_id = var.account_id
+  name       = var.tests_service_token_name
+}
+
+resource "cloudflare_zero_trust_access_policy" "tests_service_token" {
+  count = local.create_tests_service_token ? 1 : 0
+
+  account_id = var.account_id
+  name       = var.tests_service_token_policy_name
+  decision   = "non_identity"
+
+  include = [{
+    service_token = {
+      token_id = cloudflare_zero_trust_access_service_token.tests[0].id
+    }
+  }]
 }

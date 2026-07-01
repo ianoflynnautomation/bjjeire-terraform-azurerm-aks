@@ -49,3 +49,14 @@ output "bjjeire_spa_msal_tenant_id" {
   description = "Tenant ID for the SPA's MSAL config. Used as VITE_APP_MSAL_TENANT_ID; the SPA composes the authority URL in code."
   value       = data.azurerm_client_config.current.tenant_id
 }
+
+output "bjjeire_tests_client_id" {
+  description = "Client ID of the bjjeire-tests app registration. Consumed by CI/local tests as AZURE_CLIENT_ID for the client-credentials flow."
+  value       = module.bjjeire_app_registrations.tests_client_id
+}
+
+output "bjjeire_tests_client_secret" {
+  description = "Client secret of the bjjeire-tests app registration. Consumed by CI/local tests as AZURE_CLIENT_SECRET. Stored in Key Vault — do not print to logs."
+  value       = module.bjjeire_app_registrations.tests_client_secret
+  sensitive   = true
+}

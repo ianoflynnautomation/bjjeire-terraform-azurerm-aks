@@ -19,6 +19,13 @@ module "cloudflare_tunnel" {
   dns_ttl              = var.cloudflare_tunnel_dns_ttl
   dns_comment          = "${var.cloudflare_tunnel_dns_comment_prefix}${var.environment}"
   dns_wildcard_comment = "${var.cloudflare_tunnel_dns_wildcard_comment_prefix}${var.environment}"
+
+  # Root-zone stable hostnames for this env — mirrors the Access destinations
+  # in main.cloudflare-access.tf. The tunnel needs both a DNS record and an
+  # ingress rule for each; the Istio Gateway serves the wildcard-tls cert
+  # (which covers *.<root_domain>) on these connections.
+  extra_hostnames   = var.cloudflare_root_domain != "" ? ["api-${var.environment}.${var.cloudflare_root_domain}"] : []
+  dns_extra_comment = "${var.cloudflare_tunnel_dns_extra_comment_prefix}${var.environment}"
 }
 
 moved {

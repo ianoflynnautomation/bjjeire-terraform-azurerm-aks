@@ -1,5 +1,6 @@
 locals {
   budget_contact_emails = length(var.budget_notification_emails) > 0 ? var.budget_notification_emails : [var.private_email]
+  budget_start_date     = coalesce(var.budget_start_date, formatdate("YYYY-MM-01'T'00:00:00'Z'", timestamp()))
 }
 
 module "budget" {
@@ -9,7 +10,7 @@ module "budget" {
   resource_group_id = azurerm_resource_group.rg.id
   amount            = var.budget_amount
   time_grain        = var.budget_time_grain
-  start_date        = var.budget_start_date
+  start_date        = local.budget_start_date
 
   notification_thresholds         = var.budget_notification_thresholds
   notification_enabled            = var.budget_notification_enabled

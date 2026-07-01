@@ -1,6 +1,11 @@
+resource "tls_private_key" "aks_ssh_key" {
+  algorithm = var.aks_ssh_key_algorithm
+  rsa_bits  = var.aks_ssh_key_rsa_bits
+}
+
 locals {
   workload_node_pools = {
-    workload_node_pools = {
+    runners = {
       name                 = "runners"
       mode                 = "User"
       vm_size              = "Standard_D4ds_v5"
@@ -22,182 +27,126 @@ locals {
         "kubernetes.azure.com/scalesetpriority=spot:NoSchedule"
       ]
       scale_down_mode = "Delete"
-      vnet_subnet = {
-        id = module.virtual_network.subnets["workload"].resource_id
-      }
+      vnet_subnet_id  = module.virtual_network.subnets["workload"].resource_id
     }
   }
 }
 
-resource "tls_private_key" "aks_ssh_key" {
-  algorithm = var.aks_ssh_key_algorithm
-  rsa_bits  = var.aks_ssh_key_rsa_bits
+module "aks" {
+  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster.git?ref=4a9bbff95af86692da88693c7f48fdc86bc985c2" # v0.5.7
+
+  location  = azurerm_resource_group.rg.location
+  parent_id = azurerm_resource_group.rg.id
+  name      = var.aks_cluster_name
+
+  enable_telemetry = var.aks_enable_telemetry
+  tags             = var.tags
+
+  kubernetes_version  = var.aks_kubernetes_version
+  dns_prefix          = var.aks_prefix
+  node_resource_group = var.aks_node_resource_group
+
+  sku = {
+    name = var.aks_sku_name
+    tier = var.aks_sku_tier
+  }
+
+  managed_identities = {
+    system_assigned            = false
+    user_assigned_resource_ids = [module.cluster_identity.id]
+  }
+
+  enable_rbac            = var.aks_role_based_access_control_enabled
+  disable_local_accounts = var.aks_local_account_disabled
+
+  aad_profile = {
+    managed                = true
+    tenant_id              = data.azurerm_client_config.current.tenant_id
+    enable_azure_rbac      = var.aks_rbac_aad_azure_rbac_enabled
+    admin_group_object_ids = length(local.aks_admin_group_object_ids) > 0 ? local.aks_admin_group_object_ids : var.aks_rbac_aad_admin_group_object_ids
+  }
+
+  oidc_issuer_profile = {
+    enabled = var.aks_oidc_issuer_enabled
+  }
+
+  api_server_access_profile = {
+    enable_private_cluster = var.aks_private_cluster_enabled
+    authorized_ip_ranges   = var.aks_api_server_authorized_ip_ranges
+  }
+
+  default_agent_pool = {
+    name                        = var.aks_agents_pool_name
+    vm_size                     = var.aks_agents_size
+    count_of                    = var.aks_agents_count
+    enable_auto_scaling         = var.aks_auto_scaling_enabled
+    min_count                   = var.aks_agents_min_count
+    max_count                   = var.aks_agents_max_count
+    max_pods                    = var.aks_agents_max_pods
+    os_disk_size_gb             = var.aks_os_disk_size_gb
+    os_disk_type                = var.aks_os_disk_type
+    enable_node_public_ip       = var.aks_node_public_ip_enabled
+    temporary_name_for_rotation = var.aks_temporary_name_for_rotation
+    availability_zones          = var.aks_agents_availability_zones
+    vnet_subnet_id              = module.virtual_network.subnets["workload"].resource_id
+  }
+
+  network_profile = {
+    network_plugin    = var.aks_network_plugin
+    network_policy    = var.aks_network_policy
+    load_balancer_sku = var.aks_load_balancer_sku
+  }
+
+  auto_scaler_profile = var.aks_auto_scaler_profile_enabled ? {
+    scale_down_delay_after_add       = var.aks_auto_scaler_profile_scale_down_delay_after_add
+    scale_down_unneeded              = var.aks_auto_scaler_profile_scale_down_unneeded
+    scale_down_utilization_threshold = var.aks_auto_scaler_profile_scale_down_utilization_threshold
+    max_graceful_termination_sec     = var.aks_auto_scaler_profile_max_graceful_termination_sec
+    skip_nodes_with_local_storage    = var.aks_auto_scaler_profile_skip_nodes_with_local_storage
+  } : null
+
+  security_profile = {
+    workload_identity = {
+      enabled = var.aks_workload_identity_enabled
+    }
+    defender = var.aks_microsoft_defender_enabled ? {
+      security_monitoring = {
+        enabled = true
+      }
+    } : null
+  }
+
+  linux_profile = {
+    admin_username = var.aks_admin_username
+    ssh = {
+      public_keys = [{
+        key_data = tls_private_key.aks_ssh_key.public_key_openssh
+      }]
+    }
+  }
+
+  depends_on = [module.virtual_network]
 }
 
-module "aks" {
-  source = "git::https://github.com/Azure/terraform-azurerm-aks.git?ref=be56dbf4b3fbde8df7d9df37da2a4ff6a0e98f18" #11.0.0
+resource "azurerm_kubernetes_cluster_node_pool" "workload" {
+  for_each = local.workload_node_pools
 
-  location                                                        = azurerm_resource_group.rg.location
-  resource_group_name                                             = azurerm_resource_group.rg.name
-  aci_connector_linux_enabled                                     = var.aks_aci_connector_linux_enabled
-  aci_connector_linux_subnet_name                                 = var.aks_aci_connector_linux_subnet_name
-  admin_username                                                  = var.aks_admin_username
-  agents_availability_zones                                       = var.aks_agents_availability_zones
-  agents_count                                                    = var.aks_agents_count
-  agents_labels                                                   = var.aks_agents_labels
-  agents_max_count                                                = var.aks_agents_max_count
-  agents_min_count                                                = var.aks_agents_min_count
-  agents_max_pods                                                 = var.aks_agents_max_pods
-  agents_pool_drain_timeout_in_minutes                            = var.aks_agents_pool_drain_timeout_in_minutes
-  agents_pool_kubelet_configs                                     = var.aks_agents_pool_kubelet_configs
-  agents_pool_linux_os_configs                                    = var.aks_agents_pool_linux_os_configs
-  agents_pool_max_surge                                           = var.aks_agents_pool_max_surge
-  agents_pool_name                                                = var.aks_agents_pool_name
-  agents_pool_node_soak_duration_in_minutes                       = var.aks_agents_pool_node_soak_duration_in_minutes
-  agents_proximity_placement_group_id                             = var.aks_agents_proximity_placement_group_id
-  agents_size                                                     = var.aks_agents_size
-  agents_tags                                                     = var.aks_agents_tags
-  agents_type                                                     = var.aks_agents_type
-  api_server_authorized_ip_ranges                                 = var.aks_api_server_authorized_ip_ranges
-  attached_acr_id_map                                             = var.aks_attached_acr_id_map
-  auto_scaler_profile_balance_similar_node_groups                 = var.aks_auto_scaler_profile_balance_similar_node_groups
-  auto_scaler_profile_empty_bulk_delete_max                       = var.aks_auto_scaler_profile_empty_bulk_delete_max
-  auto_scaler_profile_enabled                                     = var.aks_auto_scaler_profile_enabled
-  auto_scaler_profile_expander                                    = var.aks_auto_scaler_profile_expander
-  auto_scaler_profile_max_graceful_termination_sec                = var.aks_auto_scaler_profile_max_graceful_termination_sec
-  auto_scaler_profile_max_node_provisioning_time                  = var.aks_auto_scaler_profile_max_node_provisioning_time
-  auto_scaler_profile_max_unready_nodes                           = var.aks_auto_scaler_profile_max_unready_nodes
-  auto_scaler_profile_max_unready_percentage                      = var.aks_auto_scaler_profile_max_unready_percentage
-  auto_scaler_profile_new_pod_scale_up_delay                      = var.aks_auto_scaler_profile_new_pod_scale_up_delay
-  auto_scaler_profile_scale_down_delay_after_add                  = var.aks_auto_scaler_profile_scale_down_delay_after_add
-  auto_scaler_profile_scale_down_delay_after_delete               = var.aks_auto_scaler_profile_scale_down_delay_after_delete
-  auto_scaler_profile_scale_down_delay_after_failure              = var.aks_auto_scaler_profile_scale_down_delay_after_failure
-  auto_scaler_profile_scale_down_unneeded                         = var.aks_auto_scaler_profile_scale_down_unneeded
-  auto_scaler_profile_scale_down_unready                          = var.aks_auto_scaler_profile_scale_down_unready
-  auto_scaler_profile_scale_down_utilization_threshold            = var.aks_auto_scaler_profile_scale_down_utilization_threshold
-  auto_scaler_profile_scan_interval                               = var.aks_auto_scaler_profile_scan_interval
-  auto_scaler_profile_skip_nodes_with_local_storage               = var.aks_auto_scaler_profile_skip_nodes_with_local_storage
-  auto_scaler_profile_skip_nodes_with_system_pods                 = var.aks_auto_scaler_profile_skip_nodes_with_system_pods
-  auto_scaling_enabled                                            = var.aks_auto_scaling_enabled
-  automatic_channel_upgrade                                       = var.aks_automatic_channel_upgrade
-  azure_policy_enabled                                            = var.aks_azure_policy_enabled
-  brown_field_application_gateway_for_ingress                     = var.aks_brown_field_application_gateway_for_ingress
-  client_id                                                       = var.aks_client_id
-  client_secret                                                   = var.aks_client_secret
-  cluster_log_analytics_workspace_name                            = var.aks_cluster_log_analytics_workspace_name
-  cluster_name                                                    = var.aks_cluster_name
-  cluster_name_random_suffix                                      = var.aks_cluster_name_random_suffix
-  confidential_computing                                          = var.aks_confidential_computing
-  cost_analysis_enabled                                           = var.aks_cost_analysis_enabled
-  create_monitor_data_collection_rule                             = var.aks_create_monitor_data_collection_rule
-  create_role_assignment_network_contributor                      = var.aks_create_role_assignment_network_contributor
-  create_role_assignments_for_application_gateway                 = var.aks_create_role_assignments_for_application_gateway
-  default_node_pool_fips_enabled                                  = var.aks_default_node_pool_fips_enabled
-  disk_encryption_set_id                                          = var.aks_disk_encryption_set_id
-  dns_prefix_private_cluster                                      = var.aks_dns_prefix_private_cluster
-  ebpf_data_plane                                                 = var.aks_ebpf_data_plane
-  green_field_application_gateway_for_ingress                     = var.aks_green_field_application_gateway_for_ingress
-  host_encryption_enabled                                         = var.aks_host_encryption_enabled
-  http_proxy_config                                               = var.aks_http_proxy_config
-  identity_ids                                                    = [module.cluster_identity.id]
-  identity_type                                                   = var.aks_identity_type
-  image_cleaner_enabled                                           = var.aks_image_cleaner_enabled
-  interval_before_cluster_update                                  = var.aks_interval_before_cluster_update
-  key_vault_secrets_provider_enabled                              = var.aks_key_vault_secrets_provider_enabled
-  kms_enabled                                                     = var.aks_kms_enabled
-  kms_key_vault_key_id                                            = var.aks_kms_key_vault_key_id
-  kms_key_vault_network_access                                    = var.aks_kms_key_vault_network_access
-  kubelet_identity                                                = var.aks_kubelet_identity
-  kubernetes_version                                              = var.aks_kubernetes_version
-  load_balancer_profile_enabled                                   = var.aks_load_balancer_profile_enabled
-  load_balancer_profile_idle_timeout_in_minutes                   = var.aks_load_balancer_profile_idle_timeout_in_minutes
-  load_balancer_profile_managed_outbound_ip_count                 = var.aks_load_balancer_profile_managed_outbound_ip_count
-  load_balancer_profile_managed_outbound_ipv6_count               = var.aks_load_balancer_profile_managed_outbound_ipv6_count
-  load_balancer_profile_outbound_ip_address_ids                   = var.aks_load_balancer_profile_outbound_ip_address_ids
-  load_balancer_profile_outbound_ip_prefix_ids                    = var.aks_load_balancer_profile_outbound_ip_prefix_ids
-  load_balancer_profile_outbound_ports_allocated                  = var.aks_load_balancer_profile_outbound_ports_allocated
-  load_balancer_sku                                               = var.aks_load_balancer_sku
-  local_account_disabled                                          = var.aks_local_account_disabled
-  log_analytics_solution                                          = var.aks_log_analytics_solution
-  log_analytics_workspace_enabled                                 = var.aks_log_analytics_workspace_enabled
-  log_analytics_workspace                                         = var.aks_log_analytics_workspace
-  log_analytics_workspace_allow_resource_only_permissions         = var.aks_log_analytics_workspace_allow_resource_only_permissions
-  log_analytics_workspace_cmk_for_query_forced                    = var.aks_log_analytics_workspace_cmk_for_query_forced
-  log_analytics_workspace_daily_quota_gb                          = var.aks_log_analytics_workspace_daily_quota_gb
-  log_analytics_workspace_data_collection_rule_id                 = var.aks_log_analytics_workspace_data_collection_rule_id
-  log_analytics_workspace_identity                                = var.aks_log_analytics_workspace_identity
-  log_analytics_workspace_immediate_data_purge_on_30_days_enabled = var.aks_log_analytics_workspace_immediate_data_purge_on_30_days_enabled
-  log_analytics_workspace_internet_ingestion_enabled              = var.aks_log_analytics_workspace_internet_ingestion_enabled
-  log_analytics_workspace_internet_query_enabled                  = var.aks_log_analytics_workspace_internet_query_enabled
-  log_analytics_workspace_local_authentication_disabled           = var.aks_log_analytics_workspace_local_authentication_disabled
-  log_analytics_workspace_reservation_capacity_in_gb_per_day      = var.aks_log_analytics_workspace_reservation_capacity_in_gb_per_day
-  log_analytics_workspace_resource_group_name                     = var.aks_log_analytics_workspace_resource_group_name
-  log_analytics_workspace_sku                                     = var.aks_log_analytics_workspace_sku
-  log_retention_in_days                                           = var.aks_log_retention_in_days
-  maintenance_window                                              = var.aks_maintenance_window
-  maintenance_window_auto_upgrade                                 = var.aks_maintenance_window_auto_upgrade
-  microsoft_defender_enabled                                      = var.aks_microsoft_defender_enabled
-  monitor_data_collection_rule_data_sources_syslog_facilities     = var.aks_monitor_data_collection_rule_data_sources_syslog_facilities
-  monitor_data_collection_rule_data_sources_syslog_levels         = var.aks_monitor_data_collection_rule_data_sources_syslog_levels
-  monitor_data_collection_rule_extensions_streams                 = var.aks_monitor_data_collection_rule_extensions_streams
-  monitor_metrics                                                 = var.aks_monitor_metrics
-  msi_auth_for_monitoring_enabled                                 = var.aks_msi_auth_for_monitoring_enabled
-  nat_gateway_profile                                             = var.aks_nat_gateway_profile
-  net_profile_dns_service_ip                                      = var.aks_net_profile_dns_service_ip
-  net_profile_outbound_type                                       = var.aks_net_profile_outbound_type
-  net_profile_pod_cidr                                            = var.aks_net_profile_pod_cidr
-  net_profile_service_cidr                                        = var.aks_net_profile_service_cidr
-  network_contributor_role_assigned_subnet_ids                    = var.aks_network_contributor_role_assigned_subnet_ids
-  network_plugin                                                  = var.aks_network_plugin
-  network_plugin_mode                                             = var.aks_network_plugin_mode
-  network_policy                                                  = var.aks_network_policy
-  node_network_profile                                            = var.aks_node_network_profile
-  node_os_channel_upgrade                                         = var.aks_node_os_channel_upgrade
-  node_pools                                                      = local.workload_node_pools
-  node_public_ip_enabled                                          = var.aks_node_public_ip_enabled
-  node_resource_group                                             = var.aks_node_resource_group
-  oidc_issuer_enabled                                             = var.aks_oidc_issuer_enabled
-  oms_agent_enabled                                               = var.aks_oms_agent_enabled
-  only_critical_addons_enabled                                    = var.aks_only_critical_addons_enabled
-  open_service_mesh_enabled                                       = var.aks_open_service_mesh_enabled
-  orchestrator_version                                            = var.aks_orchestrator_version
-  os_disk_size_gb                                                 = var.aks_os_disk_size_gb
-  os_disk_type                                                    = var.aks_os_disk_type
-  os_sku                                                          = var.aks_os_sku
-  pod_subnet                                                      = var.aks_pod_subnet
-  prefix                                                          = var.aks_prefix
-  private_cluster_enabled                                         = var.aks_private_cluster_enabled
-  private_cluster_public_fqdn_enabled                             = var.aks_private_cluster_public_fqdn_enabled
-  private_dns_zone_id                                             = var.aks_private_dns_zone_id
-  public_ssh_key                                                  = tls_private_key.aks_ssh_key.public_key_openssh
-  rbac_aad_admin_group_object_ids                                 = length(local.aks_admin_group_object_ids) > 0 ? local.aks_admin_group_object_ids : var.aks_rbac_aad_admin_group_object_ids
-  rbac_aad_azure_rbac_enabled                                     = var.aks_rbac_aad_azure_rbac_enabled
-  rbac_aad_tenant_id                                              = data.azurerm_client_config.current.tenant_id
-  role_based_access_control_enabled                               = var.aks_role_based_access_control_enabled
-  run_command_enabled                                             = var.ask_run_command_enabled
-  scale_down_mode                                                 = var.aks_scale_down_mode
-  secret_rotation_enabled                                         = var.aks_secret_rotation_enabled
-  secret_rotation_interval                                        = var.aks_secret_rotation_interval
-  service_mesh_profile                                            = var.aks_service_mesh_profile
-  sku_tier                                                        = var.aks_sku_tier
-  snapshot_id                                                     = var.aks_snapshot_id
-  storage_profile_blob_driver_enabled                             = var.aks_storage_profile_blob_driver_enabled
-  storage_profile_disk_driver_enabled                             = var.aks_storage_profile_disk_driver_enabled
-  storage_profile_enabled                                         = var.aks_storage_profile_enabled
-  storage_profile_file_driver_enabled                             = var.aks_storage_profile_file_driver_enabled
-  storage_profile_snapshot_controller_enabled                     = var.aks_storage_profile_snapshot_controller_enabled
-  support_plan                                                    = var.aks_support_plan
-  tags                                                            = var.tags
-  temporary_name_for_rotation                                     = var.aks_temporary_name_for_rotation
-  upgrade_override                                                = var.aks_upgrade_override
-  vnet_subnet = {
-    id = module.virtual_network.subnets["workload"].resource_id
-  }
-  web_app_routing             = var.aks_web_app_routing
-  workload_autoscaler_profile = var.aks_workload_autoscaler_profile
-  workload_identity_enabled   = var.aks_workload_identity_enabled
+  kubernetes_cluster_id = module.aks.resource_id
 
-  depends_on = [
-    module.virtual_network
-  ]
+  name                 = each.value.name
+  mode                 = each.value.mode
+  vm_size              = each.value.vm_size
+  priority             = each.value.priority
+  eviction_policy      = each.value.eviction_policy
+  spot_max_price       = each.value.spot_max_price
+  auto_scaling_enabled = each.value.auto_scaling_enabled
+  min_count            = each.value.min_count
+  max_count            = each.value.max_count
+  os_disk_type         = each.value.os_disk_type
+  os_disk_size_gb      = each.value.os_disk_size_gb
+  max_pods             = each.value.max_pods
+  node_labels          = each.value.node_labels
+  node_taints          = each.value.node_taints
+  scale_down_mode      = each.value.scale_down_mode
+  vnet_subnet_id       = each.value.vnet_subnet_id
 }

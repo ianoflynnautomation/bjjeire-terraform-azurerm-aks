@@ -107,3 +107,22 @@ variable "dns_wildcard_comment" {
   default     = "Managed by Terraform — Cloudflare Tunnel wildcard"
   nullable    = false
 }
+
+variable "extra_hostnames" {
+  type        = list(string)
+  description = "Additional fully-qualified hostnames the tunnel should accept (e.g. ['api-dev.bjjeire.com']). For each entry the module creates a proxied CNAME in the same zone and an ingress rule routing to origin_url. Use this for flat root-zone hostnames that fall outside *.<cluster_domain>."
+  default     = []
+  nullable    = false
+
+  validation {
+    condition     = alltrue([for h in var.extra_hostnames : length(trimspace(h)) > 0 && !startswith(h, "*")])
+    error_message = "extra_hostnames entries must be non-empty and must not start with '*' (use single-label specific hostnames; the module already creates a wildcard for *.<cluster_domain>)."
+  }
+}
+
+variable "dns_extra_comment" {
+  type        = string
+  description = "Comment on the per-extra-hostname tunnel DNS records (caller pre-composes any per-env suffix)."
+  default     = "Managed by Terraform — Cloudflare Tunnel extra hostname"
+  nullable    = false
+}

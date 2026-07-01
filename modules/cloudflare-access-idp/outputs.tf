@@ -12,3 +12,14 @@ output "access_app_id" {
   description = "Cloudflare Access application ID. Null when access is disabled."
   value       = try(cloudflare_zero_trust_access_application.this[0].id, null)
 }
+
+output "tests_service_token_client_id" {
+  description = "Cloudflare Access service-token client ID (CF-Access-Client-Id header). Null when tests_service_token_name is empty."
+  value       = try(cloudflare_zero_trust_access_service_token.tests[0].client_id, null)
+}
+
+output "tests_service_token_client_secret" {
+  description = "Cloudflare Access service-token client secret (CF-Access-Client-Secret header). Sensitive. Null when tests_service_token_name is empty."
+  value       = try(cloudflare_zero_trust_access_service_token.tests[0].client_secret, null)
+  sensitive   = true
+}

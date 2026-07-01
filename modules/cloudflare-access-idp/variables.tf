@@ -217,3 +217,24 @@ variable "access_include_emails" {
   default     = []
   nullable    = false
 }
+
+variable "tests_service_token_name" {
+  type        = string
+  description = "Name of the Cloudflare Access service token used by CI/Playwright to bypass the interactive IdP flow. Empty string disables service-token issuance and policy."
+  default     = ""
+  nullable    = false
+}
+
+variable "tests_service_token_policy_name" {
+  type        = string
+  description = "Name of the non_identity Access policy that admits the tests service token."
+  default     = "tests-service-token-allow"
+  nullable    = false
+}
+
+variable "tests_service_token_policy_precedence" {
+  type        = number
+  description = "Precedence (rank) of the tests service-token policy. Must be distinct from access_policy_precedence; the lower value is evaluated first."
+  default     = 2
+  nullable    = false
+}
