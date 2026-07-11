@@ -57,6 +57,16 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 
+      - name: Provide variable defaults for static analysis
+        id: lint_tfvars
+        run: |
+          # Lint passes (tflint, validate) don't have caller-supplied tfvars.
+          # Use the dev example as a representative set of variable values so
+          # null-default variables (e.g. aks_cluster_name) don't trip
+          # string-interpolation checks. Override here if dev's example.tfvars
+          # diverges from prod-like inputs.
+          echo "TFLINT_VAR_FILE=environments/dev/example.tfvars" >> "$GITHUB_ENV"
+
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
         with:
@@ -69,7 +79,7 @@ jobs:
 
       - name: TFLint Run
         id: lint
-        run: tflint --recursive --format=compact
+        run: tflint --recursive --format=compact --var-file=${{ env.TFLINT_VAR_FILE }}
         working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 

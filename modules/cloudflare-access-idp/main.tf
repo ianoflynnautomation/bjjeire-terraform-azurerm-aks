@@ -11,8 +11,8 @@ locals {
     length(var.access_include_emails) > 0
   )
 
-  create_access                = var.access_enabled && var.idp_enabled && local.has_access_include_rule
-  create_tests_service_token   = local.create_access && trimspace(var.tests_service_token_name) != ""
+  create_access              = var.access_enabled && var.idp_enabled && local.has_access_include_rule
+  create_tests_service_token = local.create_access && trimspace(var.tests_service_token_name) != ""
 }
 
 # ----- Entra app registration + secret + SPN + delegated grant -----

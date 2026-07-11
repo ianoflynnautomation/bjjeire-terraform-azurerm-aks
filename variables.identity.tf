@@ -1,3 +1,10 @@
+variable "identity_enable_telemetry" {
+  type        = bool
+  default     = false
+  description = "Enable AVM module telemetry (modtm provider) on the user-assigned identity modules."
+  nullable    = false
+}
+
 variable "cluster_identity_name_prefix" {
   type        = string
   default     = "uami-cp-"

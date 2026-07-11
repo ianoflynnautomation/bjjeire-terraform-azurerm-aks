@@ -26,12 +26,12 @@ data "azuread_domains" "default" {
 resource "random_password" "playwright_test_user" {
   count = local.playwright_test_user_enabled ? 1 : 0
 
-  length      = 32
-  special     = true
-  min_lower   = 2
-  min_upper   = 2
-  min_numeric = 2
-  min_special = 2
+  length           = 32
+  special          = true
+  min_lower        = 2
+  min_upper        = 2
+  min_numeric      = 2
+  min_special      = 2
   override_special = "!@#%^*-_+="
 
   lifecycle {
@@ -50,10 +50,10 @@ resource "random_password" "playwright_test_user" {
 resource "azuread_user" "playwright_test" {
   count = local.playwright_test_user_enabled ? 1 : 0
 
-  user_principal_name   = "${local.playwright_test_user_nickname}@${data.azuread_domains.default[0].domains[0].domain_name}"
-  display_name          = "${var.playwright_test_user_display_name} (${var.environment})"
-  mail_nickname         = local.playwright_test_user_nickname
-  password              = random_password.playwright_test_user[0].result
+  user_principal_name = "${local.playwright_test_user_nickname}@${data.azuread_domains.default[0].domains[0].domain_name}"
+  display_name        = "${var.playwright_test_user_display_name} (${var.environment})"
+  mail_nickname       = local.playwright_test_user_nickname
+  password            = random_password.playwright_test_user[0].result
   # CRITICAL for automation: do NOT require password change on first sign-in.
   # Playwright can't drive the change-password screen.
   force_password_change = false

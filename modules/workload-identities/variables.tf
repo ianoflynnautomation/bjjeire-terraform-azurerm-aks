@@ -17,6 +17,13 @@ variable "tags" {
   nullable    = false
 }
 
+variable "enable_telemetry" {
+  type        = bool
+  description = "Enable AVM module telemetry (modtm provider) on every identity."
+  default     = false
+  nullable    = false
+}
+
 variable "identities" {
   type = map(object({
     name = string

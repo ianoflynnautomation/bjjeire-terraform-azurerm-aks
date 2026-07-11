@@ -53,7 +53,7 @@ module "aks" {
 
   managed_identities = {
     system_assigned            = false
-    user_assigned_resource_ids = [module.cluster_identity.id]
+    user_assigned_resource_ids = [module.cluster_identity.resource_id]
   }
 
   enable_rbac            = var.aks_role_based_access_control_enabled
@@ -128,25 +128,27 @@ module "aks" {
   depends_on = [module.virtual_network]
 }
 
-resource "azurerm_kubernetes_cluster_node_pool" "workload" {
+module "workload_node_pools" {
+  source   = "git::https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster.git//modules/agentpool?ref=4a9bbff95af86692da88693c7f48fdc86bc985c2" # v0.5.7
   for_each = local.workload_node_pools
 
-  kubernetes_cluster_id = module.aks.resource_id
+  parent_id = module.aks.resource_id
 
-  name                 = each.value.name
-  mode                 = each.value.mode
-  vm_size              = each.value.vm_size
-  priority             = each.value.priority
-  eviction_policy      = each.value.eviction_policy
-  spot_max_price       = each.value.spot_max_price
-  auto_scaling_enabled = each.value.auto_scaling_enabled
-  min_count            = each.value.min_count
-  max_count            = each.value.max_count
-  os_disk_type         = each.value.os_disk_type
-  os_disk_size_gb      = each.value.os_disk_size_gb
-  max_pods             = each.value.max_pods
-  node_labels          = each.value.node_labels
-  node_taints          = each.value.node_taints
-  scale_down_mode      = each.value.scale_down_mode
-  vnet_subnet_id       = each.value.vnet_subnet_id
+  name                      = each.value.name
+  mode                      = each.value.mode
+  vm_size                   = each.value.vm_size
+  scale_set_priority        = each.value.priority
+  scale_set_eviction_policy = each.value.eviction_policy
+  spot_max_price            = each.value.spot_max_price
+  enable_auto_scaling       = each.value.auto_scaling_enabled
+  min_count                 = each.value.min_count
+  max_count                 = each.value.max_count
+  os_disk_type              = each.value.os_disk_type
+  os_disk_size_gb           = each.value.os_disk_size_gb
+  max_pods                  = each.value.max_pods
+  node_labels               = each.value.node_labels
+  node_taints               = each.value.node_taints
+  scale_down_mode           = each.value.scale_down_mode
+  vnet_subnet_id            = each.value.vnet_subnet_id
+  tags                      = var.tags
 }

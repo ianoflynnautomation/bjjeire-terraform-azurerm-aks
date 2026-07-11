@@ -36,12 +36,13 @@ locals {
 }
 
 module "cluster_identity" {
-  source = "./modules/user-assigned-identity"
+  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-managedidentity-userassignedidentity.git?ref=1aaccd013b15a6eb754749a6a421d856e64e01a0" #v0.5.1
 
   name                = "${var.cluster_identity_name_prefix}${var.environment}-${var.location_short_name}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
+  enable_telemetry    = var.identity_enable_telemetry
 
   role_assignments = {
     aks_vnet = {
@@ -71,6 +72,7 @@ module "workload_identities" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tags                = var.tags
+  enable_telemetry    = var.identity_enable_telemetry
 
   identities = {
     external_secrets = {

@@ -111,12 +111,12 @@ locals {
       ? module.cloudflare_tunnel.token
       : var.cloudflare_tunnel_token
     )
-    private_email                = var.private_email
-    oauth2_proxy_cookie_secret   = base64encode(random_password.oauth2_cookie_secret.result)
-    oauth2_proxy_client_secret   = azuread_application_password.oauth2_proxy.value
-    bjj_api_azuread_tenant_id    = data.azurerm_client_config.current.tenant_id
-    bjj_api_azuread_client_id    = module.bjjeire_app_registrations.api_client_id
-    bjj_api_azuread_audience     = module.bjjeire_app_registrations.api_audience
+    private_email              = var.private_email
+    oauth2_proxy_cookie_secret = base64encode(random_password.oauth2_cookie_secret.result)
+    oauth2_proxy_client_secret = azuread_application_password.oauth2_proxy.value
+    bjj_api_azuread_tenant_id  = data.azurerm_client_config.current.tenant_id
+    bjj_api_azuread_client_id  = module.bjjeire_app_registrations.api_client_id
+    bjj_api_azuread_audience   = module.bjjeire_app_registrations.api_audience
     # Empty-string fallbacks keep the secret schema stable when the tests app
     # registration / CF service token are toggled off. CI jobs that pull these
     # must treat empty values as "auth disabled in this environment".
