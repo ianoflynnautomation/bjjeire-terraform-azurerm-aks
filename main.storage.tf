@@ -40,3 +40,37 @@ module "storage_images" {
 
   tags = var.tags
 }
+
+# ------------------------------------------------------------------------------
+# Public image serving via Blob (currently disabled)
+#
+# Images are shipped inside the frontend container instead (BjjEire repo:
+# src/bjjeire-app/Dockerfile copies tools/images/processed to /srv/images and
+# Caddy serves them with immutable cache headers; Cloudflare caches at the edge).
+#
+# Switch to Blob-backed serving when the image set outgrows the container
+# (~50-100MB) or non-developers need to upload. To enable, uncomment the
+# overrides below (they replace the defaults in variables.storage.tf) and pass
+# them through tfvars/CI, then:
+#
+#   1. Upload processed images (CI step or one-off, auth via the
+#      seeder_blob_contributor role assignment above):
+#        azcopy sync tools/images/processed \
+#          "https://${var.storage_images_account_name}.blob.core.windows.net/images" \
+#          --recursive
+#
+#   2. Route /images/* in the frontend Caddyfile to the blob endpoint
+#      (reverse_proxy with the container prefix) so the relative /images/...
+#      URLs in seed data keep working and Cloudflare keeps caching on the
+#      app domain. Remove the COPY tools/images/processed line from the
+#      frontend Dockerfile at the same time.
+#
+# storage_images_allow_nested_items_to_be_public = true
+#
+# storage_images_containers = {
+#   images = {
+#     name          = "images"
+#     public_access = "Blob" # anonymous read per-blob; container listing stays disabled
+#   }
+# }
+# ------------------------------------------------------------------------------

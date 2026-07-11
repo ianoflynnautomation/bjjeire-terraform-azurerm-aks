@@ -1,11 +1,3 @@
-# Cloudflare zone-level configuration (SSL, WAF, cache, security headers).
-#
-# Scope: zone state is shared across every cluster resolving under
-# var.cloudflare_zone_name. Only ONE environment may own it — keep
-# var.cloudflare_manage_zone = true in prod, false in dev/stg. DNS records
-# stay reconciled by external-dns inside the cluster; DO NOT add
-# cloudflare_record resources here.
-
 module "cloudflare_zone" {
   source = "./modules/cloudflare-zone"
 

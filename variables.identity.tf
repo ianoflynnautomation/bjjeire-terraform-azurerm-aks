@@ -1,3 +1,10 @@
+variable "identity_enable_telemetry" {
+  type        = bool
+  default     = false
+  description = "Enable AVM module telemetry (modtm provider) on the user-assigned identity modules."
+  nullable    = false
+}
+
 variable "cluster_identity_name_prefix" {
   type        = string
   default     = "uami-cp-"
@@ -32,6 +39,13 @@ variable "gha_pr_env_identity_name_prefix" {
   type        = string
   default     = "uami-gha-prenv-"
   description = "Prefix for the GitHub Actions PR-env workload identity name."
+}
+
+variable "tests_runner_identity_name_prefix" {
+  type        = string
+  default     = "uami-tests-runner-"
+  description = "Prefix for the UAMI bound to the ARC runner ServiceAccount. The runner pod that executes Playwright suites authenticates to Entra as this identity via Workload Identity Federation, so no client secret needs to live in CI. Granted Tests.Invoke on the bjjeire-api app registration."
+  nullable    = false
 }
 
 variable "gha_pr_env_tests_repo" {
@@ -224,15 +238,48 @@ variable "app_registration_owner_object_ids" {
   nullable    = false
 }
 
+variable "playwright_test_user_enabled" {
+  type        = bool
+  description = "Provision a dedicated Entra user for Playwright UI tests (browser MSAL flow). Enable on dev/staging; keep off in prod."
+  default     = false
+  nullable    = false
+}
+
+variable "playwright_test_user_display_name" {
+  type        = string
+  description = "Display name of the Playwright test user. Environment is appended in parentheses."
+  default     = "Playwright Test User"
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.playwright_test_user_display_name)) > 0
+    error_message = "playwright_test_user_display_name must be non-empty."
+  }
+}
+
+variable "playwright_test_user_mail_nickname_prefix" {
+  type        = string
+  description = "Prefix for the mail_nickname (and UPN local part). Final UPN = <prefix>-<environment>@<default-domain>. Must be DNS-safe — lowercase alphanumerics and hyphens."
+  default     = "playwright-test"
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.playwright_test_user_mail_nickname_prefix))
+    error_message = "playwright_test_user_mail_nickname_prefix must be lowercase alphanumerics and hyphens, ≤63 chars."
+  }
+}
+
 variable "app_registration_name_prefixes" {
   type = object({
-    api = string
-    spa = string
+    api   = string
+    spa   = string
+    tests = string
   })
   description = "Environment-agnostic display name prefixes for the BjjEire Entra app registrations. The environment suffix is appended in app-registrations.tf."
   default = {
-    api = "bjjeire-api"
-    spa = "bjjeire-spa"
+    api   = "bjjeire-api"
+    spa   = "bjjeire-spa"
+    tests = "bjjeire-tests"
   }
   nullable = false
 
@@ -240,8 +287,9 @@ variable "app_registration_name_prefixes" {
     condition = (
       length(trimspace(var.app_registration_name_prefixes.api)) > 0
       && length(trimspace(var.app_registration_name_prefixes.spa)) > 0
+      && length(trimspace(var.app_registration_name_prefixes.tests)) > 0
     )
-    error_message = "app_registration_name_prefixes.api and .spa must be non-empty."
+    error_message = "app_registration_name_prefixes.api, .spa, and .tests must be non-empty."
   }
 }
 
@@ -310,13 +358,20 @@ variable "api_app_roles" {
     allowed_member_types = optional(list(string), ["User"])
     enabled              = optional(bool, true)
   }))
-  description = "Application roles exposed by the BjjEire API app registration. Role IDs are stable Entra IDs and must not change after assignment."
+  description = "Application roles exposed by the BjjEire API app registration. Role IDs are stable Entra IDs and must not change after assignment. tests_invoke MUST be present — the tests SP role assignment binds against it explicitly."
   default = {
     admin = {
       id           = "b1d4e7a3-2c5b-4f6e-8d9a-3b4c5d6e7f80"
       value        = "Admin"
       display_name = "Admin"
       description  = "Admin role for the bjjeire-api. Grants write access to gym, event, and competition data."
+    }
+    tests_invoke = {
+      id                   = "c2e5f8b4-3d6c-4f7d-9e8b-4c5d6e7f8091"
+      value                = "Tests.Invoke"
+      display_name         = "Tests.Invoke"
+      description          = "Allows the bjjeire-tests app registration to call the API in CI and locally via the client-credentials flow. Granted only to the tests service principal."
+      allowed_member_types = ["Application"]
     }
   }
   nullable = false

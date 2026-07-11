@@ -1,6 +1,6 @@
 output "ids" {
   description = "Map of identity key => resource ID of the user-assigned identity."
-  value       = { for k, m in module.identity : k => m.id }
+  value       = { for k, m in module.identity : k => m.resource_id }
 }
 
 output "client_ids" {
@@ -15,5 +15,5 @@ output "principal_ids" {
 
 output "names" {
   description = "Map of identity key => Azure name of the identity."
-  value       = { for k, m in module.identity : k => m.name }
+  value       = { for k, m in module.identity : k => m.resource_name }
 }

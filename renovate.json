@@ -1,0 +1,91 @@
+
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
+    ":prHourlyLimit4",
+    ":prConcurrentLimit10",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "labels": ["dependencies", "renovate"],
+  "timezone": "Europe/Dublin",
+  "schedule": ["after 6am and before 10pm every weekday"],
+  "dependencyDashboardTitle": "Dependency Dashboard (Terraform modules & providers)",
+  "commitMessagePrefix": "chore(deps):",
+  "gitAuthor": "Renovate Bot <renovate@users.noreply.github.com>",
+  "prBodyNotes": [
+    "Module sources are pinned as `git::<repo>?ref=<commit-sha>` with a trailing `#vX.Y.Z` comment; Renovate updates the SHA and the comment together.",
+    "Every bump must pass the `terraform-quality` workflow (fmt/validate/tflint/trivy) and a `terraform plan` for dev before merge; promote dev → staging → prod."
+  ],
+  "enabledManagers": [
+    "terraform",
+    "github-actions",
+    "custom.regex"
+  ],
+  "terraform": {
+    "managerFilePatterns": ["/\\.tf$/"]
+  },
+  "github-actions": {
+    "managerFilePatterns": ["/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Terraform modules pinned by git commit SHA with a #vX.Y.Z version comment",
+      "managerFilePatterns": ["/\\.tf$/"],
+      "matchStrings": [
+        "source\\s*=\\s*\"git::https://github\\.com/(?<depName>[^/\"]+/[^/\"?]+?)\\.git(?://[^\"?]*)?\\?ref=(?<currentDigest>[a-f0-9]{40})\"\\s*#\\s*v?(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v(?<version>\\d+\\.\\d+\\.\\d+)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "SHA-pinned Terraform modules (AVM etc.): one PR each, never automerge — plans gate promotion",
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["github-tags"],
+      "addLabels": ["terraform-module"],
+      "automerge": false
+    },
+    {
+      "description": "AVM modules are pre-1.0 — treat minor bumps as potentially breaking, require dashboard approval",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["Azure/terraform-azurerm-avm-**"],
+      "matchCurrentVersion": "<1.0.0",
+      "matchUpdateTypes": ["minor"],
+      "dependencyDashboardApproval": true,
+      "addLabels": ["avm-pre-1.0-minor"]
+    },
+    {
+      "description": "Terraform providers — group patch/minor to reduce PR noise",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "terraform-providers (non-major)",
+      "automerge": false
+    },
+    {
+      "description": "Major updates always need explicit review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "dependencyDashboardApproval": true,
+      "addLabels": ["major-update"]
+    },
+    {
+      "description": "GitHub Actions — group patch/minor; no automerge (CI trust boundary)",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "github-actions",
+      "automerge": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true
+}

@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TERRAFORM_VERSION: "1.10.5"
+  TERRAFORM_VERSION: "1.15.3"
   TFLINT_VERSION: "v0.53.0"
   WORKING_DIR: ${{ inputs.working_directory || '.' }}
   COMMENT_IDENTIFIER: "Terraform Quality Checks"
@@ -57,6 +57,16 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 
+      - name: Provide variable defaults for static analysis
+        id: lint_tfvars
+        run: |
+          # Lint passes (tflint, validate) don't have caller-supplied tfvars.
+          # Use the dev example as a representative set of variable values so
+          # null-default variables (e.g. aks_cluster_name) don't trip
+          # string-interpolation checks. Override here if dev's example.tfvars
+          # diverges from prod-like inputs.
+          echo "TFLINT_VAR_FILE=environments/dev/example.tfvars" >> "$GITHUB_ENV"
+
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
         with:
@@ -69,7 +79,14 @@ jobs:
 
       - name: TFLint Run
         id: lint
-        run: tflint --recursive --format=compact
+        run: |
+          # --var-file is root-relative, so it can't ride along with
+          # --recursive (which re-runs tflint inside each module directory).
+          # Lint the root with representative values, then each module bare.
+          tflint --format=compact --var-file=${{ env.TFLINT_VAR_FILE }}
+          for dir in modules/*/; do
+            tflint --chdir="$dir" --format=compact
+          done
         working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 

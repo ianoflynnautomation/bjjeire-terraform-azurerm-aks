@@ -148,6 +148,30 @@ variable "cloudflare_access_policy_precedence" {
   description = "Precedence (rank) of the Access policy under the app. Lower = evaluated first."
 }
 
+variable "cloudflare_tests_service_token_enabled" {
+  type        = bool
+  default     = false
+  description = "Provision a Cloudflare Access service token + non_identity policy on the Access app for CI/Playwright. Enable on dev/staging; keep off in prod."
+}
+
+variable "cloudflare_tests_service_token_name_prefix" {
+  type        = string
+  default     = "bjjeire-tests-"
+  description = "Prefix for the Cloudflare Access service-token name. Final name: <prefix><environment>."
+}
+
+variable "cloudflare_tests_service_token_policy_name" {
+  type        = string
+  default     = "tests-service-token-allow"
+  description = "Name of the non_identity Access policy that admits the tests service token."
+}
+
+variable "cloudflare_tests_service_token_policy_precedence" {
+  type        = number
+  default     = 2
+  description = "Precedence of the tests service-token policy. Must differ from cloudflare_access_policy_precedence; lower = evaluated first."
+}
+
 variable "cloudflare_tunnel_name_prefix" {
   type        = string
   default     = "bjjeire-"
@@ -214,11 +238,34 @@ variable "cloudflare_tunnel_dns_wildcard_comment_prefix" {
   description = "Comment prefix for the wildcard tunnel DNS record. var.environment is appended."
 }
 
+variable "cloudflare_tunnel_dns_extra_comment_prefix" {
+  type        = string
+  default     = "Managed by Terraform — Cloudflare Tunnel extra hostname for "
+  description = "Comment prefix for the per-extra-hostname tunnel DNS records (e.g. api-<env>.<root>). var.environment is appended."
+}
+
 variable "cloudflare_api_token" {
   type        = string
   description = "The cloudflare_api_token"
   sensitive   = true
   nullable    = false
+}
+
+variable "cloudflare_root_domain" {
+  type        = string
+  default     = ""
+  description = "Root DNS zone (e.g. bjjeire.com). Used to compose single-level stable hostnames like api-<environment>.<cloudflare_root_domain>. Empty disables the single-level Access destination additions; only the legacy *.<cluster_domain> pattern is then included."
+  nullable    = false
+
+  validation {
+    condition = (
+      var.cloudflare_root_domain == "" || (
+        length(split(".", var.cloudflare_root_domain)) >= 2 &&
+        alltrue([for label in split(".", var.cloudflare_root_domain) : length(trimspace(label)) > 0])
+      )
+    )
+    error_message = "cloudflare_root_domain must be empty or a valid DNS zone with two or more non-empty labels (e.g. bjjeire.com)."
+  }
 }
 
 variable "cloudflare_zone_name" {

@@ -61,6 +61,30 @@ locals {
       name         = "bjj-api-azuread-audience"
       content_type = "text/plain"
     }
+    bjj_tests_azuread_client_id = {
+      name         = "bjj-tests-azuread-client-id"
+      content_type = "text/plain"
+    }
+    bjj_tests_azuread_client_secret = {
+      name         = "bjj-tests-azuread-client-secret"
+      content_type = "text/plain"
+    }
+    bjj_tests_cf_access_client_id = {
+      name         = "bjj-tests-cf-access-client-id"
+      content_type = "text/plain"
+    }
+    bjj_tests_cf_access_client_secret = {
+      name         = "bjj-tests-cf-access-client-secret"
+      content_type = "text/plain"
+    }
+    bjj_tests_pw_user = {
+      name         = "bjj-tests-pw-user"
+      content_type = "text/plain"
+    }
+    bjj_tests_pw_password = {
+      name         = "bjj-tests-pw-password"
+      content_type = "text/plain"
+    }
     ghcr_pat = {
       name         = "ghcr-pat"
       content_type = "text/plain"
@@ -84,15 +108,40 @@ locals {
     # (e.g. tunnel pre-existing and managed manually).
     cloudflare_tunnel_token = (
       var.enable_cloudflare_tunnel
-      ? data.cloudflare_zero_trust_tunnel_cloudflared_token.this[0].token
+      ? module.cloudflare_tunnel.token
       : var.cloudflare_tunnel_token
     )
-    private_email                = var.private_email
-    oauth2_proxy_cookie_secret   = base64encode(random_password.oauth2_cookie_secret.result)
-    oauth2_proxy_client_secret   = azuread_application_password.oauth2_proxy.value
-    bjj_api_azuread_tenant_id    = data.azurerm_client_config.current.tenant_id
-    bjj_api_azuread_client_id    = module.bjjeire_app_registrations.api_client_id
-    bjj_api_azuread_audience     = module.bjjeire_app_registrations.api_audience
+    private_email              = var.private_email
+    oauth2_proxy_cookie_secret = base64encode(random_password.oauth2_cookie_secret.result)
+    oauth2_proxy_client_secret = azuread_application_password.oauth2_proxy.value
+    bjj_api_azuread_tenant_id  = data.azurerm_client_config.current.tenant_id
+    bjj_api_azuread_client_id  = module.bjjeire_app_registrations.api_client_id
+    bjj_api_azuread_audience   = module.bjjeire_app_registrations.api_audience
+    # Empty-string fallbacks keep the secret schema stable when the tests app
+    # registration / CF service token are toggled off. CI jobs that pull these
+    # must treat empty values as "auth disabled in this environment".
+    bjj_tests_azuread_client_id     = module.bjjeire_app_registrations.tests_client_id
+    bjj_tests_azuread_client_secret = module.bjjeire_app_registrations.tests_client_secret
+    bjj_tests_cf_access_client_id = (
+      module.cloudflare_access_idp.tests_service_token_client_id != null
+      ? module.cloudflare_access_idp.tests_service_token_client_id
+      : ""
+    )
+    bjj_tests_cf_access_client_secret = (
+      module.cloudflare_access_idp.tests_service_token_client_secret != null
+      ? module.cloudflare_access_idp.tests_service_token_client_secret
+      : ""
+    )
+    bjj_tests_pw_user = (
+      length(azuread_user.playwright_test) > 0
+      ? azuread_user.playwright_test[0].user_principal_name
+      : ""
+    )
+    bjj_tests_pw_password = (
+      length(random_password.playwright_test_user) > 0
+      ? random_password.playwright_test_user[0].result
+      : ""
+    )
     bjj_donation_bitcoin_address = var.donation_bitcoin_address
     ghcr_pat                     = var.ghcr_pat
     bjj_mongodb_root_password    = random_password.bjj_mongodb_root_password.result
