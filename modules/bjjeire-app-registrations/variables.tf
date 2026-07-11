@@ -87,7 +87,6 @@ variable "api_app_roles" {
   `tests_invoke` entry whose `value` becomes the role name in the `roles` claim
   on tests-client tokens; the tests service principal is granted this role.
   EOT
-  default     = {}
   nullable    = false
 
   validation {

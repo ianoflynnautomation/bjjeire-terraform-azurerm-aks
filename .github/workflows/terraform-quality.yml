@@ -79,7 +79,14 @@ jobs:
 
       - name: TFLint Run
         id: lint
-        run: tflint --recursive --format=compact --var-file=${{ env.TFLINT_VAR_FILE }}
+        run: |
+          # --var-file is root-relative, so it can't ride along with
+          # --recursive (which re-runs tflint inside each module directory).
+          # Lint the root with representative values, then each module bare.
+          tflint --format=compact --var-file=${{ env.TFLINT_VAR_FILE }}
+          for dir in modules/*/; do
+            tflint --chdir="$dir" --format=compact
+          done
         working-directory: ${{ env.WORKING_DIR }}
         continue-on-error: true
 
