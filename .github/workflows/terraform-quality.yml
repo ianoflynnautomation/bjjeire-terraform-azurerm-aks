@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TERRAFORM_VERSION: "1.10.5"
+  TERRAFORM_VERSION: "1.15.3"
   TFLINT_VERSION: "v0.53.0"
   WORKING_DIR: ${{ inputs.working_directory || '.' }}
   COMMENT_IDENTIFIER: "Terraform Quality Checks"
