@@ -23,7 +23,7 @@ locals {
 }
 
 module "virtual_network" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-network-virtualnetwork.git?ref=c08ca17f59b4f04ee70d9a0928c9bc41738d7ce8" #v0.17.0
+  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-network-virtualnetwork.git?ref=7700fb912c3e735b2806faee01e7682af425c46d" #v0.19.0
 
   location                = azurerm_resource_group.rg.location
   parent_id               = azurerm_resource_group.rg.id
