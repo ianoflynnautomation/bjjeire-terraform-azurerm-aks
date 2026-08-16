@@ -2,47 +2,33 @@ name: terraform-audit
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "**.tf"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "**.tf"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: write
-  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tfsec:
+  scan:
     name: Run tfsec sarif report
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.2
-
-      - name: Run Trivy vulnerability scanner in IaC mode for Terraform
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          scan-type: "config"
-          scan-ref: "."
-          hide-progress: true
-          format: "sarif"
-          output: "trivy-terraform-results.sarif"
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: "CRITICAL,HIGH"
-          trivyignores: ".trivyignore"
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: always()
-        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3
-        with:
-          sarif_file: "trivy-terraform-results.sarif"
+    permissions:
+      contents: read
+      security-events: write
+    uses: ianoflynnautomation/bjjeire-ci-templates/.github/workflows/iac-scan.yml@v1
+    with:
+      scan-path: "."
+      severity: CRITICAL,HIGH
+      trivyignore-file: .trivyignore
+      # skip-dirs for .terraform lives here.
+      trivy-config-file: trivy.yaml
+      sarif-category: trivy-terraform

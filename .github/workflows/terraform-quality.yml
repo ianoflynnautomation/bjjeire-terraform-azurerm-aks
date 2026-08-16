@@ -2,9 +2,9 @@ name: terraform-quality
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
     inputs:
       working_directory:
@@ -14,127 +14,22 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  TERRAFORM_VERSION: "1.15.3"
-  TFLINT_VERSION: "v0.53.0"
-  WORKING_DIR: ${{ inputs.working_directory || '.' }}
-  COMMENT_IDENTIFIER: "Terraform Quality Checks"
-
 jobs:
   quality:
     name: Quality Checks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-          terraform_wrapper: false 
-
-      - name: Terraform Format
-        id: fmt
-        run: terraform fmt -check -recursive -diff
-        working-directory: ${{ env.WORKING_DIR }}
-        continue-on-error: true
-
-      - name: Terraform Init
-        id: init
-        run: terraform init -backend=false
-        working-directory: ${{ env.WORKING_DIR }}
-
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
-        working-directory: ${{ env.WORKING_DIR }}
-        continue-on-error: true
-
-      - name: Provide variable defaults for static analysis
-        id: lint_tfvars
-        run: |
-          # Lint passes (tflint, validate) don't have caller-supplied tfvars.
-          # Use the dev example as a representative set of variable values so
-          # null-default variables (e.g. aks_cluster_name) don't trip
-          # string-interpolation checks. Override here if dev's example.tfvars
-          # diverges from prod-like inputs.
-          echo "TFLINT_VAR_FILE=environments/dev/example.tfvars" >> "$GITHUB_ENV"
-
-      - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
-        with:
-          tflint_version: ${{ env.TFLINT_VERSION }}
-
-      - name: TFLint Init
-        run: tflint --init
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: TFLint Run
-        id: lint
-        run: |
-          # --var-file is root-relative, so it can't ride along with
-          # --recursive (which re-runs tflint inside each module directory).
-          # Lint the root with representative values, then each module bare.
-          tflint --format=compact --var-file=${{ env.TFLINT_VAR_FILE }}
-          for dir in modules/*/; do
-            tflint --chdir="$dir" --format=compact
-          done
-        working-directory: ${{ env.WORKING_DIR }}
-        continue-on-error: true
-
-      - name: Post Results to PR
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const commentIdentifier = process.env.COMMENT_IDENTIFIER;
-            const body = `### ${commentIdentifier}
-
-            | Check | Result | Status |
-            |-------|--------|--------|
-            | Format | \`${{ steps.fmt.outcome }}\` | ${{ steps.fmt.outcome == 'success' && '✅' || '❌' }} |
-            | Validate | \`${{ steps.validate.outcome }}\` | ${{ steps.validate.outcome == 'success' && '✅' || '❌' }} |
-            | Lint | \`${{ steps.lint.outcome }}\` | ${{ steps.lint.outcome == 'success' && '✅' || '⚠️' }} |
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-
-            const botComment = comments.find(c =>
-              c.user.type === 'Bot' &&
-              c.body.includes(commentIdentifier)
-            );
-
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: body,
-              });
-            }
-
-      - name: Final Status Check
-        if: steps.fmt.outcome != 'success' || steps.validate.outcome != 'success' || steps.lint.outcome != 'success'
-        run: |
-          echo "One or more quality checks failed."
-          exit 1
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ianoflynnautomation/bjjeire-ci-templates/.github/workflows/terraform-quality.yml@v1
+    with:
+      working-directory: ${{ inputs.working_directory || '.' }}
+      terraform-version: "1.15.3"
+      tflint-version: "v0.53.0"
+      tflint-var-file: environments/dev/example.tfvars
+      tflint-module-paths: "modules/*/"
+      comment-title: Terraform Quality Checks
