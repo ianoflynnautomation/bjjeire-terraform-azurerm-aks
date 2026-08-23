@@ -1,21 +1,6 @@
 ---
-name: Terraform Agent
-description: "Terraform infrastructure specialist with automated HCP Terraform workflows. Leverages Terraform MCP server for registry integration, workspace management, and run orchestration. Generates compliant code using latest provider/module versions, manages private registries, automates variable sets, and orchestrates infrastructure deployments with proper validation and security practices."
-tools: ['read', 'edit', 'search', 'shell', 'terraform/*']
-mcp-servers:
-  terraform:
-    type: 'local'
-    command: 'docker'
-    args: [
-      'run',
-      '-i',
-      '--rm',
-      '-e', 'TFE_TOKEN=${COPILOT_MCP_TFE_TOKEN}',
-      '-e', 'TFE_ADDRESS=${COPILOT_MCP_TFE_ADDRESS}',
-      '-e', 'ENABLE_TF_OPERATIONS=${COPILOT_MCP_ENABLE_TF_OPERATIONS}',
-      'hashicorp/terraform-mcp-server:latest'
-    ]
-    tools: ["*"]
+name: terraform
+description: Terraform infrastructure specialist with automated HCP Terraform workflows. Leverages Terraform MCP server for registry integration, workspace management, and run orchestration. Generates compliant code using latest provider/module versions, manages private registries, automates variable sets, and orchestrates infrastructure deployments with proper validation and security practices.
 ---
 
 # 🧭 Terraform Agent Instructions
