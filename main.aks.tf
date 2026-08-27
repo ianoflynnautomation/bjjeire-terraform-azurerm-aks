@@ -5,26 +5,55 @@ resource "tls_private_key" "aks_ssh_key" {
 
 locals {
   workload_node_pools = {
+    # Application + preview workloads. Untainted User pool so they do not
+    # compete with AKS system add-ons on the system pool.
+    apps = {
+      name                 = "apps"
+      mode                 = "User"
+      vm_size              = "Standard_D2ps_v6"
+      priority             = "Regular"
+      eviction_policy      = null
+      spot_max_price       = null
+      auto_scaling_enabled = true
+      min_count            = 1
+      max_count            = 3
+      os_disk_type         = "Managed"
+      os_disk_size_gb      = 64
+      max_pods             = 110
+      node_labels = {
+        "workload" = "apps"
+      }
+      node_taints     = []
+      scale_down_mode = "Delete"
+      vnet_subnet_id  = module.virtual_network.subnets["workload"].resource_id
+    }
+    # ARC runners. kubernetes-novolume / emptyDir use node-local disk, so this
+    # SKU must have temp storage (the "d" in Dds) and an ephemeral OS disk.
+    #
+    # Quota (Sweden Central, measured 2026-08-27):
+    #   Low-priority vCPUs  3  → Spot D4 (4 vCPU) never schedules (CA 409)
+    #   Standard Ddsv5      0  → Regular Dds_v5 is also unavailable
+    #   Standard Ddsv6     10  → Regular D4ds_v6 fits
+    #   Regional vCPUs     15, ~5 free after system+apps → max_count 1
+    # D4ds_v6: 4 vCPU / 16 GiB / 150 GiB temp / 12 data disks.
     runners = {
       name                 = "runners"
       mode                 = "User"
-      vm_size              = "Standard_D4ds_v5"
-      priority             = "Spot"
-      eviction_policy      = "Delete"
-      spot_max_price       = -1
+      vm_size              = "Standard_D4ds_v6"
+      priority             = "Regular"
+      eviction_policy      = null
+      spot_max_price       = null
       auto_scaling_enabled = true
       min_count            = 0
-      max_count            = 5
+      max_count            = 1
       os_disk_type         = "Ephemeral"
       os_disk_size_gb      = 128
       max_pods             = 110
       node_labels = {
-        "workload"                              = "gha-runner"
-        "kubernetes.azure.com/scalesetpriority" = "spot"
+        "workload" = "gha-runner"
       }
       node_taints = [
         "dedicated=gha-runner:NoSchedule",
-        "kubernetes.azure.com/scalesetpriority=spot:NoSchedule"
       ]
       scale_down_mode = "Delete"
       vnet_subnet_id  = module.virtual_network.subnets["workload"].resource_id
