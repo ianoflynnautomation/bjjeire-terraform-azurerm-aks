@@ -30,22 +30,21 @@ locals {
     # ARC runners. kubernetes-novolume / emptyDir use node-local disk, so this
     # SKU must have temp storage (the "d" in Dds) and an ephemeral OS disk.
     #
-    # Quota (Sweden Central, measured 2026-08-27):
-    #   Low-priority vCPUs  3  → Spot D4 (4 vCPU) never schedules (CA 409)
-    #   Standard Ddsv5      0  → Regular Dds_v5 is also unavailable
-    #   Standard Ddsv6     10  → Regular D4ds_v6 fits
-    #   Regional vCPUs     15, ~5 free after system+apps → max_count 1
-    # D4ds_v6: 4 vCPU / 16 GiB / 150 GiB temp / 12 data disks.
+    # Acceptance is 8 Playwright shards. Each job container used ~3 GiB with
+    # request 0, so a D2ds_v5 (~6 GiB allocatable) and even D4ds_v6 (~14 GiB)
+    # pack until MemoryPressure eviction. D8ds_v6 is 8 vCPU / 32 GiB / 300 GiB
+    # temp. Regional vCPU quota was raised 15 → 32 (2026-08-27) so this fits
+    # with system (4) + apps max 3 (6): 4+6+16 = 26 ≤ 32.
     runners = {
       name                 = "runners"
       mode                 = "User"
-      vm_size              = "Standard_D4ds_v6"
+      vm_size              = "Standard_D8ds_v6"
       priority             = "Regular"
       eviction_policy      = null
       spot_max_price       = null
       auto_scaling_enabled = true
       min_count            = 0
-      max_count            = 1
+      max_count            = 2
       os_disk_type         = "Ephemeral"
       os_disk_size_gb      = 128
       max_pods             = 110
