@@ -32,7 +32,7 @@ flowchart LR
         Tunnel --> Istio[Istio ingress]
         subgraph aks [AKS]
             Istio --> Apps[bjjeire workloads]
-            Runners[Spot node pool<br/>GitHub ARC runners]
+            Runners[User node pool<br/>GitHub ARC runners]
         end
         Apps -- workload identity --> KV[Key Vault]
         Apps -- workload identity --> Storage[Blob Storage]
@@ -42,7 +42,7 @@ flowchart LR
 
 **What gets provisioned:**
 
-- **AKS** — [AVM managed cluster module](https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster); Entra RBAC, OIDC issuer + workload identity, system pool plus a Spot pool (scale-to-zero) for GitHub Actions runners
+- **AKS** — [AVM managed cluster module](https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster); Entra RBAC, OIDC issuer + workload identity, system pool, an `apps` User pool, and a scale-to-zero `runners` User pool (ephemeral OS + local temp disk) for GitHub Actions runners
 - **Network** — VNet with system/workload subnets, NSG locked to Cloudflare origin IPs
 - **Cloudflare** — zone settings, WAF/cache/security-header rulesets, Tunnel (no public ingress), Zero Trust Access with Entra ID as IdP
 - **Identity** — user-assigned managed identities with federated credentials for the API, seeder, Flux controllers, External Secrets, ARC test runner, and GitHub Actions OIDC (no long-lived CI secrets anywhere)
