@@ -54,7 +54,8 @@ locals {
 # a 403 arriving once per shard file.
 
 module "storage_atest_history" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-storage-storageaccount.git?ref=456bd88463bf63f08449644f60913c9523608b60" #v0.6.8
+  source  = "Azure/avm-res-storage-storageaccount/azurerm"
+  version = "0.6.8"
 
   # Opt-in per environment. The root module is shared, so this is created only
   # where storage_atest_account_name is set — dev today, others when they want
@@ -129,14 +130,18 @@ module "storage_atest_history" {
     }
   }
 
-  role_assignments = {
-    gha_main_blob_contributor = {
-      role_definition_id_or_name = var.storage_atest_role_definition_writer
-      principal_id               = module.workload_identities.principal_ids["gha_atest_history"]
-    }
-    gha_pr_blob_reader = {
-      role_definition_id_or_name = var.storage_atest_role_definition_reader
-      principal_id               = module.workload_identities.principal_ids["gha_pr_env"]
-    }
-  }
+  role_assignments = merge(
+    {
+      gha_main_blob_contributor = {
+        role_definition_id_or_name = var.storage_atest_role_definition_writer
+        principal_id               = module.workload_identities.principal_ids["gha_atest_history"]
+      }
+    },
+    local.gha_pr_env_enabled ? {
+      gha_pr_blob_reader = {
+        role_definition_id_or_name = var.storage_atest_role_definition_reader
+        principal_id               = try(module.workload_identities.principal_ids["gha_pr_env"], "")
+      }
+    } : {},
+  )
 }

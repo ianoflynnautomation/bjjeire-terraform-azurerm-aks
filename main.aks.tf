@@ -66,7 +66,8 @@ locals {
 }
 
 module "aks" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster.git?ref=2d0302e9d8c450df2d1b257c32823b00b3557c96" # v0.6.7
+  source  = "Azure/avm-res-containerservice-managedcluster/azurerm"
+  version = "0.6.7"
 
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
@@ -162,7 +163,8 @@ module "aks" {
 }
 
 module "workload_node_pools" {
-  source   = "git::https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster.git//modules/agentpool?ref=2d0302e9d8c450df2d1b257c32823b00b3557c96" # v0.6.7
+  source   = "Azure/avm-res-containerservice-managedcluster/azurerm//modules/agentpool"
+  version  = "0.6.7"
   for_each = local.workload_node_pools
 
   parent_id = module.aks.resource_id

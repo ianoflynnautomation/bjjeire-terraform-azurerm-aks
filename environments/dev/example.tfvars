@@ -1,4 +1,3 @@
-
 subscription_id                                          = "REPLACE_WITH_SUBSCRIPTION_ID"
 private_email                                            = "REPLACE_WITH_EMAIL@example.com"
 github_app_id                                            = "REPLACE_WITH_APP_ID"
@@ -12,7 +11,6 @@ github_org                                               = "REPLACE_WITH_GITHUB_
 github_repo                                              = "REPLACE_WITH_GITHUB_REPO"
 environment                                              = "dev"
 cluster_domain                                           = "dev.example.com"
-grafana_admin_password                                   = "REPLACE_ME"
 aks_cluster_name                                         = "aks-acme-dev-weu-01"
 aks_sku_tier                                             = "Free"
 aks_agents_count                                         = null
@@ -55,7 +53,6 @@ cloudflare_zone_name                                     = "example.com"
 cloudflare_manage_zone                                   = false
 enable_cloudflare_tunnel                                 = true
 cloudflare_team_name                                     = "REPLACE_WITH_CF_TEAM_NAME"
-cloudflare_api_token                                     = "REPLACE_WITH_CF_API_TOKEN"
 # Single-user dev pattern — uncomment and list addresses to scope Cloudflare Access
 # to specific emails instead of a whole domain or group.
 # internal_access_emails                                   = ["you@example.com"]
@@ -67,7 +64,6 @@ app_registration_owner_object_ids            = ["REPLACE_WITH_OWNER_OID"]
 spa_redirect_uris                            = ["https://dev.example.com/", "http://localhost:3000/"]
 oauth2_proxy_allowed_group_display_name      = ""
 entra_diagnostics_log_analytics_workspace_id = ""
-bjj_mongodb_root_password                    = "REPLACE_WITH_MONGO_PASSWORD"
 kv_network_acls = {
   bypass                     = "AzureServices"
   default_action             = "Allow"
@@ -88,3 +84,9 @@ tags = {
   cost-center = "development"
   auto-stop   = "enabled"
 }
+
+# Secrets are NOT in this file. Export before plan/apply:
+#   TF_VAR_cloudflare_api_token
+#   TF_VAR_github_app_private_key="$(cat /path/to/key.pem)"
+#   TF_VAR_ghcr_pat
+#   TF_VAR_github_preview_pat   # required on dev

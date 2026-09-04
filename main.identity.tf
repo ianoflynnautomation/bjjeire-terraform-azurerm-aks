@@ -39,11 +39,16 @@ locals {
 
   rk_aks_cluster_user           = "aks_cluster_user"
   rk_aks_pr_env_namespace_admin = "aks_pr_env_namespace_admin"
-  rk_aks_rbac_admin             = "aks_rbac_admin"
+
+  # Preview CI (wait-ready, SHA-env apply) and the Flux ResourceSet factory are
+  # a dev-cluster capability. Staging/prod overlays omit bjj-eire-preview and
+  # Kyverno deny-ephemeral-envs rejects those namespaces.
+  gha_pr_env_enabled = coalesce(var.gha_pr_env_enabled, var.environment == "dev")
 }
 
 module "cluster_identity" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-managedidentity-userassignedidentity.git?ref=f65ce0d66a73b2f78600954cef20e093f8c19851" #v0.5.2
+  source  = "Azure/avm-res-managedidentity-userassignedidentity/azurerm"
+  version = "0.5.2"
 
   name                = "${var.cluster_identity_name_prefix}${var.environment}-${var.location_short_name}"
   resource_group_name = azurerm_resource_group.rg.name
@@ -59,15 +64,22 @@ module "cluster_identity" {
   }
 }
 
+# count rather than a moved-to-[0] block: staging/prod omit this role, and a
+# `moved` `to` address that is not in config is an error. Dev will replace the
+# unindexed resource with [0] once (new role definition id; the assignment
+# below tracks it).
 resource "azurerm_role_definition" "aks_pr_env_namespace_admin" {
+  count = local.gha_pr_env_enabled ? 1 : 0
+
   name        = format(var.aks_pr_env_role_name_format, var.environment)
   scope       = module.aks.resource_id
   description = var.aks_pr_env_role_description
 
   permissions {
-    actions      = var.aks_pr_env_role_actions
-    not_actions  = var.aks_pr_env_role_not_actions
-    data_actions = var.aks_pr_env_role_data_actions
+    actions          = var.aks_pr_env_role_actions
+    not_actions      = var.aks_pr_env_role_not_actions
+    data_actions     = var.aks_pr_env_role_data_actions
+    not_data_actions = var.aks_pr_env_role_not_data_actions
   }
 
   assignable_scopes = [module.aks.resource_id]
@@ -160,50 +172,6 @@ module "workload_identities" {
       }
     }
 
-    gha_pr_env = {
-      name = "${var.gha_pr_env_identity_name_prefix}${var.environment}-${var.location_short_name}"
-      federated_identity_credentials = {
-        pull_request = {
-          audience = local.workload_identity_audience
-          issuer   = local.github_oidc_issuer
-          name     = local.fic_name_gha_prenv_pull_request
-          subject  = local.fic_subject_gha_prenv_tests_pr
-        }
-        main = {
-          audience = local.workload_identity_audience
-          issuer   = local.github_oidc_issuer
-          name     = local.fic_name_gha_prenv_main
-          subject  = local.fic_subject_gha_prenv_tests_main
-        }
-        bjjeire_pull_request = {
-          audience = local.workload_identity_audience
-          issuer   = local.github_oidc_issuer
-          name     = local.fic_name_gha_prenv_bjjeire_pr
-          subject  = local.fic_subject_gha_prenv_bjjeire_pr
-        }
-        bjjeire_main = {
-          audience = local.workload_identity_audience
-          issuer   = local.github_oidc_issuer
-          name     = local.fic_name_gha_prenv_bjjeire_main
-          subject  = local.fic_subject_gha_prenv_bjjeire_main
-        }
-      }
-      role_assignments = {
-        (local.rk_aks_cluster_user) = {
-          role_definition_id_or_name = var.gha_pr_env_aks_user_role_name
-          scope                      = module.aks.resource_id
-        }
-        (local.rk_aks_pr_env_namespace_admin) = {
-          role_definition_id_or_name = azurerm_role_definition.aks_pr_env_namespace_admin.role_definition_resource_id
-          scope                      = module.aks.resource_id
-        }
-        (local.rk_aks_rbac_admin) = {
-          role_definition_id_or_name = "Azure Kubernetes Service RBAC Admin"
-          scope                      = module.aks.resource_id
-        }
-      }
-    }
-
     # Identity attached to the ARC runner ServiceAccount. The runner pod that
     # executes Playwright suites in the cluster reaches Entra as THIS identity
     # via Workload Identity, so no client secret is needed in CI.
@@ -222,6 +190,47 @@ module "workload_identities" {
       }
     }
     },
+    local.gha_pr_env_enabled ? {
+      gha_pr_env = {
+        name = "${var.gha_pr_env_identity_name_prefix}${var.environment}-${var.location_short_name}"
+        federated_identity_credentials = {
+          pull_request = {
+            audience = local.workload_identity_audience
+            issuer   = local.github_oidc_issuer
+            name     = local.fic_name_gha_prenv_pull_request
+            subject  = local.fic_subject_gha_prenv_tests_pr
+          }
+          main = {
+            audience = local.workload_identity_audience
+            issuer   = local.github_oidc_issuer
+            name     = local.fic_name_gha_prenv_main
+            subject  = local.fic_subject_gha_prenv_tests_main
+          }
+          bjjeire_pull_request = {
+            audience = local.workload_identity_audience
+            issuer   = local.github_oidc_issuer
+            name     = local.fic_name_gha_prenv_bjjeire_pr
+            subject  = local.fic_subject_gha_prenv_bjjeire_pr
+          }
+          bjjeire_main = {
+            audience = local.workload_identity_audience
+            issuer   = local.github_oidc_issuer
+            name     = local.fic_name_gha_prenv_bjjeire_main
+            subject  = local.fic_subject_gha_prenv_bjjeire_main
+          }
+        }
+        role_assignments = {
+          (local.rk_aks_cluster_user) = {
+            role_definition_id_or_name = var.gha_pr_env_aks_user_role_name
+            scope                      = module.aks.resource_id
+          }
+          (local.rk_aks_pr_env_namespace_admin) = {
+            role_definition_id_or_name = one(azurerm_role_definition.aks_pr_env_namespace_admin[*].role_definition_resource_id)
+            scope                      = module.aks.resource_id
+          }
+        }
+      }
+    } : {},
     local.atest_history_enabled ? {
       gha_atest_history = {
         name = "${var.gha_atest_history_identity_name_prefix}${var.environment}-${var.location_short_name}"
@@ -302,8 +311,8 @@ output "bjjeire_seeder_identity_client_id" {
 }
 
 output "gha_pr_env_identity_client_id" {
-  description = "Client ID of the GitHub Actions PR-env identity. When github_manage_actions_oidc is true (default on dev), this stack writes it to AZURE_CLIENT_ID on gha_pr_env_app_repo and gha_pr_env_tests_repo so a UAMI recreate cannot leave CI on a deleted client ID."
-  value       = module.workload_identities.client_ids["gha_pr_env"]
+  description = "Client ID of the GitHub Actions PR-env identity. Null when gha_pr_env_enabled is false (default off staging/prod). When github_manage_actions_oidc is true (default on dev), this stack writes it to AZURE_CLIENT_ID on gha_pr_env_app_repo and gha_pr_env_tests_repo so a UAMI recreate cannot leave CI on a deleted client ID."
+  value       = try(module.workload_identities.client_ids["gha_pr_env"], null)
 }
 
 output "atest_history_identity_client_id" {

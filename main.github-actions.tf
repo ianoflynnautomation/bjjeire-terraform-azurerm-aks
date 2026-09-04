@@ -17,7 +17,7 @@ locals {
 
   github_oidc_secrets = local.github_manage_actions_oidc ? merge(
     {
-      AZURE_CLIENT_ID           = module.workload_identities.client_ids["gha_pr_env"]
+      AZURE_CLIENT_ID           = try(module.workload_identities.client_ids["gha_pr_env"], "")
       AZURE_TENANT_ID           = data.azurerm_client_config.current.tenant_id
       AZURE_SUBSCRIPTION_ID     = var.subscription_id
       AZURE_TESTS_CLIENT_ID     = module.bjjeire_app_registrations.tests_client_id
@@ -102,6 +102,10 @@ resource "terraform_data" "github_oidc_required_on_dev" {
     precondition {
       condition     = var.environment != "dev" || local.github_manage_actions_oidc
       error_message = "github_manage_actions_oidc is false on dev. This apply would leave GitHub Actions on deleted UAMI/app secrets (AADSTS700016 / AADSTS7000215). Set github_manage_actions_oidc = true (or omit the variable) and re-apply with TF_VAR_github_token=$(gh auth token) until the bjjeire GitHub App can write repository Secrets and Variables."
+    }
+    precondition {
+      condition     = !local.github_manage_actions_oidc || local.gha_pr_env_enabled
+      error_message = "github_manage_actions_oidc requires gha_pr_env_enabled — AZURE_CLIENT_ID is that identity's client ID. Enable the PR-env identity (dev default) or disable GitHub secret management."
     }
   }
 }

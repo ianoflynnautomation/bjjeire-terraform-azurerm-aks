@@ -30,8 +30,9 @@ locals {
 }
 
 module "cloudflare_ingress_nsg" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-network-networksecuritygroup.git?ref=ae82f649ff4e2f0a9d31a18b9c9cd227b1b9b497" #v0.5.1
-  count  = var.enable_cloudflare_origin_lockdown ? 1 : 0
+  source  = "Azure/avm-res-network-networksecuritygroup/azurerm"
+  version = "0.5.1"
+  count   = var.enable_cloudflare_origin_lockdown ? 1 : 0
 
   name                = "${var.aks_cluster_name}${var.cloudflare_nsg_name_suffix}"
   location            = azurerm_resource_group.rg.location
