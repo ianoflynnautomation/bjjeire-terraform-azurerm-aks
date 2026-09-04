@@ -5,18 +5,51 @@ resource "tls_private_key" "aks_ssh_key" {
 
 locals {
   workload_node_pools = {
-    runners = {
-      name                 = "runners"
+    # Application + preview workloads. Untainted User pool so they do not
+    # compete with AKS system add-ons on the system pool (AKS: system pool is
+    # for critical add-ons; User pools for apps). Do not taint system with
+    # CriticalAddonsOnly until Flux/Istio/Kyverno carry that toleration.
+    apps = {
+      name                 = "apps"
       mode                 = "User"
-      vm_size              = "Standard_D4ds_v5"
+      vm_size              = "Standard_D2ps_v6"
+      priority             = "Regular"
+      eviction_policy      = null
+      spot_max_price       = null
+      auto_scaling_enabled = true
+      min_count            = 1
+      max_count            = 3
+      os_disk_type         = "Managed"
+      os_disk_size_gb      = 64
+      max_pods             = 110
+      node_labels = {
+        "workload" = "apps"
+      }
+      node_taints     = []
+      scale_down_mode = "Delete"
+      vnet_subnet_id  = module.virtual_network.subnets["workload"].resource_id
+    }
+    runners = {
+      name = "runners"
+      mode = "User"
+      # Spot. Sweden Central lowPriorityCores is 3. A D4 SKU is 4 vCPU and
+      # never comes up; D2 is 2 vCPU and fits. Must be amd64: the ARC runner
+      # image (actions-runner:2.337.0) has no arm64 manifest, so D2pds_v6
+      # schedules then ImagePullBackOff. D2ds_v6 is x86, Ddsv6 family quota
+      # is 10, and the local disk fits a 64 GiB ephemeral OS disk. Do not set
+      # upgrade_settings (AVM defaults maxUnavailable to "0"; Spot rejects
+      # the field). Do not set min_count=1: default maxSurge adds a second
+      # node on create (2+2=4 vCPU). Create empty; CA adds one node when
+      # runner pods are Pending.
+      vm_size              = "Standard_D2ds_v6"
       priority             = "Spot"
       eviction_policy      = "Delete"
       spot_max_price       = -1
       auto_scaling_enabled = true
       min_count            = 0
-      max_count            = 5
+      max_count            = 1
       os_disk_type         = "Ephemeral"
-      os_disk_size_gb      = 128
+      os_disk_size_gb      = 64
       max_pods             = 110
       node_labels = {
         "workload"                              = "gha-runner"
@@ -33,7 +66,8 @@ locals {
 }
 
 module "aks" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster.git?ref=2d0302e9d8c450df2d1b257c32823b00b3557c96" # v0.6.7
+  source  = "Azure/avm-res-containerservice-managedcluster/azurerm"
+  version = "0.6.7"
 
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
@@ -129,7 +163,8 @@ module "aks" {
 }
 
 module "workload_node_pools" {
-  source   = "git::https://github.com/Azure/terraform-azurerm-avm-res-containerservice-managedcluster.git//modules/agentpool?ref=2d0302e9d8c450df2d1b257c32823b00b3557c96" # v0.6.7
+  source   = "Azure/avm-res-containerservice-managedcluster/azurerm//modules/agentpool"
+  version  = "0.6.7"
   for_each = local.workload_node_pools
 
   parent_id = module.aks.resource_id
@@ -150,5 +185,6 @@ module "workload_node_pools" {
   node_taints               = each.value.node_taints
   scale_down_mode           = each.value.scale_down_mode
   vnet_subnet_id            = each.value.vnet_subnet_id
+  upgrade_settings          = try(each.value.upgrade_settings, null)
   tags                      = var.tags
 }

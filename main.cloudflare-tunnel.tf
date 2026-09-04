@@ -4,6 +4,7 @@ module "cloudflare_tunnel" {
   enabled    = var.enable_cloudflare_tunnel
   account_id = local.cloudflare_account_id
   zone_name  = var.cloudflare_zone_name
+  api_token  = var.cloudflare_api_token
 
   name          = "${var.cloudflare_tunnel_name_prefix}${var.environment}"
   config_src    = var.cloudflare_tunnel_config_src
@@ -26,6 +27,14 @@ module "cloudflare_tunnel" {
   # (which covers *.<root_domain>) on these connections.
   extra_hostnames   = var.cloudflare_root_domain != "" ? ["api-${var.environment}.${var.cloudflare_root_domain}"] : []
   dns_extra_comment = "${var.cloudflare_tunnel_dns_extra_comment_prefix}${var.environment}"
+  # Preview HTTPRoutes use pr-N.<root> / api-pr-N.<root> because Universal SSL
+  # covers *.root but not *.cluster_domain. Publish *.root at this tunnel so
+  # those names are not left on a stale zone-apex A record (Cloudflare 522).
+  wildcard_hostnames = (
+    var.cloudflare_root_domain != "" && var.cluster_domain != var.cloudflare_root_domain
+    ? ["*.${var.cloudflare_root_domain}"]
+    : []
+  )
 }
 
 moved {

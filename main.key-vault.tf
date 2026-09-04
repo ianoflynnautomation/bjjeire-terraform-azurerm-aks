@@ -89,6 +89,14 @@ locals {
       name         = "ghcr-pat"
       content_type = "text/plain"
     }
+    github_preview_pat = {
+      name         = "github-preview-pat"
+      content_type = "text/plain"
+    }
+    flux_preview_webhook_token = {
+      name         = "flux-preview-webhook-token"
+      content_type = "text/plain"
+    }
     bjj_mongodb_root_password = {
       name         = "bjj-mongodb-root-password"
       content_type = "text/plain"
@@ -101,11 +109,8 @@ locals {
     github_app_id              = var.github_app_id
     github_app_installation_id = var.github_app_installation_id
     github_app_private_key     = var.github_app_private_key
-    grafana_admin_password     = var.grafana_admin_password
+    grafana_admin_password     = random_password.grafana_admin.result
     cloudflare_api_token       = var.cloudflare_api_token
-    # Prefer the token derived from the Terraform-managed tunnel. Fall back
-    # to var.cloudflare_tunnel_token only when enable_cloudflare_tunnel = false
-    # (e.g. tunnel pre-existing and managed manually).
     cloudflare_tunnel_token = (
       var.enable_cloudflare_tunnel
       ? module.cloudflare_tunnel.token
@@ -144,6 +149,8 @@ locals {
     )
     bjj_donation_bitcoin_address = var.donation_bitcoin_address
     ghcr_pat                     = var.ghcr_pat
+    github_preview_pat           = var.github_preview_pat
+    flux_preview_webhook_token   = random_password.flux_preview_webhook_token.result
     bjj_mongodb_root_password    = random_password.bjj_mongodb_root_password.result
   }
 
@@ -164,7 +171,8 @@ locals {
 }
 
 module "key_vault" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-keyvault-vault.git?ref=3735ca49887857467f3030ad72fd43705e1eb387" #v0.10.2
+  source  = "Azure/avm-res-keyvault-vault/azurerm"
+  version = "0.10.2"
 
   location                                = azurerm_resource_group.rg.location
   name                                    = var.kv_name

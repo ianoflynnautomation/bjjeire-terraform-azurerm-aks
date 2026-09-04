@@ -13,6 +13,11 @@ output "access_app_id" {
   value       = try(cloudflare_zero_trust_access_application.this[0].id, null)
 }
 
+output "tests_service_token_enabled" {
+  description = "Whether the tests service token is created. Derived from input variables only, so it stays known at plan time and is safe to use in for_each keys — unlike tests_service_token_client_id, which is unknown until apply on a fresh create."
+  value       = local.create_tests_service_token
+}
+
 output "tests_service_token_client_id" {
   description = "Cloudflare Access service-token client ID (CF-Access-Client-Id header). Null when tests_service_token_name is empty."
   value       = try(cloudflare_zero_trust_access_service_token.tests[0].client_id, null)

@@ -1,5 +1,6 @@
 module "storage_images" {
-  source = "git::https://github.com/Azure/terraform-azurerm-avm-res-storage-storageaccount.git?ref=456bd88463bf63f08449644f60913c9523608b60" #v0.6.8
+  source  = "Azure/avm-res-storage-storageaccount/azurerm"
+  version = "0.6.8"
 
   name                            = var.storage_images_account_name
   resource_group_name             = azurerm_resource_group.rg.name

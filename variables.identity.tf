@@ -35,10 +35,29 @@ variable "flux_identity_name_prefix" {
   description = "Prefix for the Flux workload identity name."
 }
 
+variable "gha_atest_history_identity_name_prefix" {
+  type        = string
+  description = "Name prefix for the user-assigned identity that writes the atest run-history blob. Deliberately separate from gha_pr_env: it federates on the main branch only, so 'pull requests cannot write history' is enforced by Entra rather than by workflow YAML."
+  default     = "uami-atest-history-"
+  nullable    = false
+}
+
 variable "gha_pr_env_identity_name_prefix" {
   type        = string
   default     = "uami-gha-prenv-"
   description = "Prefix for the GitHub Actions PR-env workload identity name."
+}
+
+variable "gha_pr_env_enabled" {
+  type        = bool
+  default     = null
+  nullable    = true
+  description = "Create the GitHub Actions PR-env UAMI, custom AKS namespace-admin role, and federated credentials (including pull_request). Null means enabled only when environment=dev — Flux preview and wait-ready CI target the dev cluster; staging/prod overlays omit bjj-eire-preview and Kyverno deny-ephemeral-envs rejects those namespaces. Cannot be true on prod."
+
+  validation {
+    condition     = var.environment != "prod" || var.gha_pr_env_enabled != true
+    error_message = "gha_pr_env_enabled cannot be true when environment is prod. PR-env CI and Flux preview target the dev cluster; prod admits no ephemeral namespaces."
+  }
 }
 
 variable "tests_runner_identity_name_prefix" {
@@ -52,6 +71,27 @@ variable "gha_pr_env_tests_repo" {
   type        = string
   default     = "bjjeire-tests"
   description = "Name of the GitHub repository that runs PR-env workflows. Combined with var.github_org to scope federated identity credential subjects."
+}
+
+variable "gha_pr_env_app_repo" {
+  type        = string
+  default     = "bjjeire"
+  description = "GitHub app repository whose Actions jobs call azure/login as gha_pr_env (PR Env Validation, ci-main acceptance-gate). Combined with var.github_org for federated identity subjects. Distinct from var.github_repo, which names this Terraform repository."
+  nullable    = false
+}
+
+variable "github_owner_id" {
+  type        = string
+  default     = "68143624"
+  description = "Numeric GitHub owner id for ianoflynnautomation. Repos created after 2026-07-15 use immutable OIDC sub repo:OWNER@OWNER-ID/REPO@REPO-ID:…"
+  nullable    = false
+}
+
+variable "gha_pr_env_app_repo_id" {
+  type        = string
+  default     = "1305574865"
+  description = "Numeric GitHub repository id for gha_pr_env_app_repo (bjjeire). Required because that repo uses GitHub's immutable OIDC subject format."
+  nullable    = false
 }
 
 variable "gha_pr_env_main_branch" {
@@ -80,7 +120,7 @@ variable "aks_pr_env_role_name_format" {
 
 variable "aks_pr_env_role_description" {
   type        = string
-  default     = "Allows the GitHub Actions pr-env workflow to manage ephemeral PR namespaces in AKS. Permits namespace + most namespaced-resource CRUD via Azure RBAC for Kubernetes, but cannot mutate cluster RBAC, node pools, or AKS itself."
+  default     = "GitHub Actions wait-ready / SHA-env apply on the dev cluster. Read-all plus write to ephemeral-env kinds (namespaces, core quota/limitrange/configmaps, HelmRelease, HTTPRoute, NetworkPolicy, ExternalSecret, Istio policy, Flux InputProvider). Cannot exec/attach/port-forward, write secrets, or mutate cluster RBAC, node pools, or AKS itself."
   description = "Description of the custom AKS PR-env namespace admin role."
 }
 
@@ -105,11 +145,35 @@ variable "aks_pr_env_role_not_actions" {
 variable "aks_pr_env_role_data_actions" {
   type = list(string)
   default = [
-    "Microsoft.ContainerService/managedClusters/namespaces/read",
+    "Microsoft.ContainerService/managedClusters/*/read",
     "Microsoft.ContainerService/managedClusters/namespaces/write",
     "Microsoft.ContainerService/managedClusters/namespaces/delete",
+    "Microsoft.ContainerService/managedClusters/core/*",
+    "Microsoft.ContainerService/managedClusters/apps/*",
+    "Microsoft.ContainerService/managedClusters/networking.k8s.io/*",
+    "Microsoft.ContainerService/managedClusters/gateway.networking.k8s.io/*",
+    "Microsoft.ContainerService/managedClusters/helm.toolkit.fluxcd.io/*",
+    "Microsoft.ContainerService/managedClusters/kustomize.toolkit.fluxcd.io/*",
+    "Microsoft.ContainerService/managedClusters/fluxcd.controlplane.io/*",
+    "Microsoft.ContainerService/managedClusters/external-secrets.io/*",
+    "Microsoft.ContainerService/managedClusters/security.istio.io/*",
+    "Microsoft.ContainerService/managedClusters/networking.istio.io/*",
   ]
-  description = "AKS Kubernetes-namespace data actions granted by the AKS PR-env role."
+  description = "Azure RBAC for Kubernetes data actions for the PR-env identity. Sized to GitOps preview (sha-env/manifests.yaml + flux-preview ClusterRole) plus wait-ready reads. Cluster-wide Azure Kubernetes Service RBAC Admin is intentionally not used."
+  nullable    = false
+}
+
+variable "aks_pr_env_role_not_data_actions" {
+  type = list(string)
+  default = [
+    "Microsoft.ContainerService/managedClusters/core/pods/exec/action",
+    "Microsoft.ContainerService/managedClusters/core/pods/attach/action",
+    "Microsoft.ContainerService/managedClusters/core/pods/portforward/action",
+    "Microsoft.ContainerService/managedClusters/core/secrets/write",
+    "Microsoft.ContainerService/managedClusters/core/secrets/delete",
+  ]
+  description = "Data actions subtracted from aks_pr_env_role_data_actions. core/* would otherwise allow exec and secret mutation in every namespace."
+  nullable    = false
 }
 
 variable "oauth2_proxy_app_name_prefix" {
@@ -204,9 +268,10 @@ variable "github_app_private_key" {
 
 variable "grafana_admin_password" {
   type        = string
-  description = "Grafana admin password"
+  default     = null
   sensitive   = true
-  nullable    = false
+  nullable    = true
+  description = "Deprecated and ignored. Grafana's admin password is generated by random_password.grafana_admin and stored in Key Vault as grafana-admin-password. Remove this from tfvars. To rotate, taint random_password.grafana_admin and apply."
 }
 
 variable "ghcr_pat" {
@@ -221,6 +286,39 @@ variable "ghcr_pat" {
   }
 }
 
+variable "github_preview_pat" {
+  type        = string
+  description = "Fine-grained GitHub PAT for the Flux ResourceSetInputProvider (Contents=read, Pull requests=read on ianoflynnautomation/BjjEire). Written to Key Vault as github-preview-pat and synced by the bjj-eire-preview ExternalSecret. Required on the dev cluster; leave empty on staging/prod. Pass via TF_VAR_github_preview_pat rather than embedding in tfvars."
+  sensitive   = true
+  nullable    = false
+  default     = ""
+
+  validation {
+    condition     = var.environment != "dev" || length(trimspace(var.github_preview_pat)) > 0
+    error_message = "github_preview_pat is required when environment is dev (Flux PR ResourceSetInputProvider). Pass via TF_VAR_github_preview_pat."
+  }
+}
+
+variable "github_token" {
+  type        = string
+  description = "GitHub token with Actions secrets:write and variables:write on gha_pr_env_app_repo and gha_pr_env_tests_repo. Used when the GitHub App lacks those permissions. Empty falls back to GitHub App auth (github_app_id / installation_id / private_key). Pass via TF_VAR_github_token=\"$(gh auth token)\"."
+  sensitive   = true
+  nullable    = false
+  default     = ""
+}
+
+variable "github_manage_actions_oidc" {
+  type        = bool
+  description = "When true, this stack writes AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID (and AKS_* variables on the app repo) so a UAMI recreate cannot leave CI pointing at a deleted client ID (AADSTS700016). Null means enabled only for environment=dev — PR-env workflows target the dev cluster via repo-level secrets. Cannot be true on prod (those secrets would point app/tests CI at the production cluster)."
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.environment != "prod" || var.github_manage_actions_oidc != true
+    error_message = "github_manage_actions_oidc cannot be true when environment is prod — app/tests CI must not authenticate to the production cluster."
+  }
+}
+
 variable "github_org" {
   type        = string
   description = "The GitHub Organization or Username"
@@ -228,7 +326,7 @@ variable "github_org" {
 
 variable "github_repo" {
   type        = string
-  description = "The repository name"
+  description = "Name of this Terraform GitHub repository. Not the app repo — gha_pr_env GitHub OIDC subjects for wait-ready / PR-env use var.gha_pr_env_app_repo."
 }
 
 variable "app_registration_owner_object_ids" {
@@ -243,6 +341,11 @@ variable "playwright_test_user_enabled" {
   description = "Provision a dedicated Entra user for Playwright UI tests (browser MSAL flow). Enable on dev/staging; keep off in prod."
   default     = false
   nullable    = false
+
+  validation {
+    condition     = var.environment != "prod" || !var.playwright_test_user_enabled
+    error_message = "playwright_test_user_enabled must be false when environment is prod (passworded user with MFA excluded is a test identity, not a production principal)."
+  }
 }
 
 variable "playwright_test_user_display_name" {

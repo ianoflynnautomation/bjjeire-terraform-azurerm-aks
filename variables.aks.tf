@@ -189,8 +189,13 @@ variable "aks_role_based_access_control_enabled" {
 variable "aks_local_account_disabled" {
   type        = bool
   default     = true
-  description = "Disable local admin accounts (use Azure AD auth only)."
+  description = "Disable local admin accounts (use Azure AD auth only). Required true in prod."
   nullable    = false
+
+  validation {
+    condition     = var.environment != "prod" || var.aks_local_account_disabled
+    error_message = "aks_local_account_disabled must be true when environment is prod (Entra ID only; no local kube-admin accounts)."
+  }
 }
 
 variable "aks_rbac_aad_azure_rbac_enabled" {
@@ -231,7 +236,26 @@ variable "aks_private_cluster_enabled" {
 variable "aks_api_server_authorized_ip_ranges" {
   type        = list(string)
   default     = null
-  description = "CIDR ranges allowed to reach the public API server. Ignored when aks_private_cluster_enabled = true."
+  description = "CIDR ranges allowed to reach the public API server. Ignored when aks_private_cluster_enabled = true. Required (non-empty) in prod unless the cluster is private."
+
+  validation {
+    condition = (
+      var.environment != "prod"
+      || var.aks_private_cluster_enabled
+      || (
+        var.aks_api_server_authorized_ip_ranges != null
+        && length(var.aks_api_server_authorized_ip_ranges) > 0
+      )
+    )
+    error_message = "Production public AKS API servers must set aks_api_server_authorized_ip_ranges to at least one CIDR, or enable aks_private_cluster_enabled."
+  }
+
+  validation {
+    condition = var.aks_api_server_authorized_ip_ranges == null || alltrue([
+      for cidr in var.aks_api_server_authorized_ip_ranges : can(cidrhost(cidr, 0))
+    ])
+    error_message = "aks_api_server_authorized_ip_ranges entries must be valid CIDR prefixes (e.g. 203.0.113.0/24)."
+  }
 }
 
 variable "aks_microsoft_defender_enabled" {

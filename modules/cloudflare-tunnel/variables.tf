@@ -5,6 +5,13 @@ variable "enabled" {
   nullable    = false
 }
 
+variable "api_token" {
+  type        = string
+  description = "Cloudflare API token used only to delete leftover A/AAAA/CNAME records that would collide with the tunnel CNAMEs (error 81053). Same token as the Cloudflare provider. Sensitive; not written to terraform_data input."
+  sensitive   = true
+  nullable    = false
+}
+
 variable "account_id" {
   type        = string
   description = "Cloudflare account ID. Must be non-empty when enabled = true."
@@ -117,6 +124,21 @@ variable "extra_hostnames" {
   validation {
     condition     = alltrue([for h in var.extra_hostnames : length(trimspace(h)) > 0 && !startswith(h, "*")])
     error_message = "extra_hostnames entries must be non-empty and must not start with '*' (use single-label specific hostnames; the module already creates a wildcard for *.<cluster_domain>)."
+  }
+}
+
+variable "wildcard_hostnames" {
+  type        = list(string)
+  description = "Additional leftmost-label wildcards the tunnel should accept and publish as proxied CNAMEs (e.g. ['*.bjjeire.com']). Needed for ephemeral preview hosts like pr-80.example.com, which sit under the zone apex because Cloudflare Universal SSL covers *.root_domain but not *.cluster_domain. More-specific records (grafana.example.com) still win in DNS."
+  default     = []
+  nullable    = false
+
+  validation {
+    condition = alltrue([
+      for h in var.wildcard_hostnames :
+      length(trimspace(h)) > 2 && startswith(h, "*.") && length(split(".", trimprefix(h, "*."))) >= 2
+    ])
+    error_message = "wildcard_hostnames entries must look like '*.example.com' (leftmost-label wildcard over a real zone)."
   }
 }
 

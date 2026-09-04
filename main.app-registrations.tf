@@ -51,12 +51,12 @@ output "bjjeire_spa_msal_tenant_id" {
 }
 
 output "bjjeire_tests_client_id" {
-  description = "Client ID of the bjjeire-tests app registration. Consumed by CI/local tests as AZURE_CLIENT_ID for the client-credentials flow."
+  description = "Client ID of the bjjeire-tests app registration. Consumed by CI/local tests as AZURE_TESTS_CLIENT_ID for the client-credentials flow. When github_manage_actions_oidc is true, this stack writes it to GitHub Actions secrets."
   value       = module.bjjeire_app_registrations.tests_client_id
 }
 
 output "bjjeire_tests_client_secret" {
-  description = "Client secret of the bjjeire-tests app registration. Consumed by CI/local tests as AZURE_CLIENT_SECRET. Stored in Key Vault — do not print to logs."
+  description = "Client secret of the bjjeire-tests app registration. Consumed by CI/local tests as AZURE_TESTS_CLIENT_SECRET for the client-credentials flow. Stored in Key Vault — do not print to logs."
   value       = module.bjjeire_app_registrations.tests_client_secret
   sensitive   = true
 }

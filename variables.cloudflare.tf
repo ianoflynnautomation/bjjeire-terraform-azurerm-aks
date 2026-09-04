@@ -152,6 +152,11 @@ variable "cloudflare_tests_service_token_enabled" {
   type        = bool
   default     = false
   description = "Provision a Cloudflare Access service token + non_identity policy on the Access app for CI/Playwright. Enable on dev/staging; keep off in prod."
+
+  validation {
+    condition     = var.environment != "prod" || !var.cloudflare_tests_service_token_enabled
+    error_message = "cloudflare_tests_service_token_enabled must be false when environment is prod (the token bypasses the Entra IdP on the production edge)."
+  }
 }
 
 variable "cloudflare_tests_service_token_name_prefix" {
@@ -246,9 +251,14 @@ variable "cloudflare_tunnel_dns_extra_comment_prefix" {
 
 variable "cloudflare_api_token" {
   type        = string
-  description = "The cloudflare_api_token"
+  description = "Cloudflare API token for the provider and tunnel DNS cleanup scripts. Pass via TF_VAR_cloudflare_api_token — do not put it in tfvars."
   sensitive   = true
   nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.cloudflare_api_token)) > 0
+    error_message = "cloudflare_api_token must be non-empty. Export TF_VAR_cloudflare_api_token."
+  }
 }
 
 variable "cloudflare_root_domain" {
