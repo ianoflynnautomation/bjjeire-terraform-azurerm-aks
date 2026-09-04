@@ -1,6 +1,6 @@
 module "storage_images" {
   source  = "Azure/avm-res-storage-storageaccount/azurerm"
-  version = "0.6.8"
+  version = "0.10.0"
 
   name                            = var.storage_images_account_name
   resource_group_name             = azurerm_resource_group.rg.name
