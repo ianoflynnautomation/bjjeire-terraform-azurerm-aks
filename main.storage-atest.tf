@@ -55,7 +55,7 @@ locals {
 
 module "storage_atest_history" {
   source  = "Azure/avm-res-storage-storageaccount/azurerm"
-  version = "0.6.8"
+  version = "0.10.0"
 
   # Opt-in per environment. The root module is shared, so this is created only
   # where storage_atest_account_name is set — dev today, others when they want

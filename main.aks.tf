@@ -67,7 +67,7 @@ locals {
 
 module "aks" {
   source  = "Azure/avm-res-containerservice-managedcluster/azurerm"
-  version = "0.6.7"
+  version = "0.8.3"
 
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
@@ -164,7 +164,7 @@ module "aks" {
 
 module "workload_node_pools" {
   source   = "Azure/avm-res-containerservice-managedcluster/azurerm//modules/agentpool"
-  version  = "0.6.7"
+  version  = "0.8.3"
   for_each = local.workload_node_pools
 
   parent_id = module.aks.resource_id

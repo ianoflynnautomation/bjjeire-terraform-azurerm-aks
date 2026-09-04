@@ -172,7 +172,7 @@ locals {
 
 module "key_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.10.2"
+  version = "0.11.0"
 
   location                                = azurerm_resource_group.rg.location
   name                                    = var.kv_name

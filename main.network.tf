@@ -24,7 +24,7 @@ locals {
 
 module "virtual_network" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "0.19.0"
+  version = "0.22.2"
 
   location                = azurerm_resource_group.rg.location
   parent_id               = azurerm_resource_group.rg.id
