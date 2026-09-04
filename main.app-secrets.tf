@@ -1,3 +1,8 @@
+resource "random_password" "flux_preview_webhook_token" {
+  length  = 40
+  special = false
+}
+
 resource "random_password" "bjj_mongodb_root_password" {
   length           = var.mongodb_root_password_length
   special          = var.mongodb_root_password_special

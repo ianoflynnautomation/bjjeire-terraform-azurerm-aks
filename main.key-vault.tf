@@ -89,6 +89,14 @@ locals {
       name         = "ghcr-pat"
       content_type = "text/plain"
     }
+    github_preview_pat = {
+      name         = "github-preview-pat"
+      content_type = "text/plain"
+    }
+    flux_preview_webhook_token = {
+      name         = "flux-preview-webhook-token"
+      content_type = "text/plain"
+    }
     bjj_mongodb_root_password = {
       name         = "bjj-mongodb-root-password"
       content_type = "text/plain"
@@ -103,9 +111,6 @@ locals {
     github_app_private_key     = var.github_app_private_key
     grafana_admin_password     = var.grafana_admin_password
     cloudflare_api_token       = var.cloudflare_api_token
-    # Prefer the token derived from the Terraform-managed tunnel. Fall back
-    # to var.cloudflare_tunnel_token only when enable_cloudflare_tunnel = false
-    # (e.g. tunnel pre-existing and managed manually).
     cloudflare_tunnel_token = (
       var.enable_cloudflare_tunnel
       ? module.cloudflare_tunnel.token
@@ -144,6 +149,8 @@ locals {
     )
     bjj_donation_bitcoin_address = var.donation_bitcoin_address
     ghcr_pat                     = var.ghcr_pat
+    github_preview_pat           = var.github_preview_pat
+    flux_preview_webhook_token   = random_password.flux_preview_webhook_token.result
     bjj_mongodb_root_password    = random_password.bjj_mongodb_root_password.result
   }
 
