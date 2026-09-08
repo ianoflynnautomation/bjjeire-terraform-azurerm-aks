@@ -7,7 +7,7 @@ module "budget" {
   source = "./modules/budget"
 
   name              = "${var.budget_name_prefix}${var.resource_group_name}"
-  resource_group_id = azurerm_resource_group.rg.id
+  resource_group_id = module.rg.resource_id
   amount            = var.budget_amount
   time_grain        = var.budget_time_grain
   start_date        = local.budget_start_date
@@ -20,9 +20,4 @@ module "budget" {
   forecasted_threshold_percent    = var.budget_forecasted_threshold_percent
   forecasted_threshold_type       = var.budget_forecasted_threshold_type
   contact_emails                  = local.budget_contact_emails
-}
-
-moved {
-  from = azurerm_consumption_budget_resource_group.rg
-  to   = module.budget.azurerm_consumption_budget_resource_group.this
 }

@@ -1,10 +1,10 @@
 module "storage_images" {
   source  = "Azure/avm-res-storage-storageaccount/azurerm"
-  version = "0.6.8"
+  version = "0.10.0"
 
   name                            = var.storage_images_account_name
-  resource_group_name             = azurerm_resource_group.rg.name
-  location                        = azurerm_resource_group.rg.location
+  parent_id                       = module.rg.resource_id
+  location                        = module.rg.location
   account_tier                    = var.storage_images_account_tier
   account_replication_type        = var.storage_images_replication_type
   allow_nested_items_to_be_public = var.storage_images_allow_nested_items_to_be_public
@@ -15,7 +15,7 @@ module "storage_images" {
   enable_telemetry                = var.vnet_enable_telemetry
 
   blob_properties = {
-    cors_rule = [
+    cors_rules = [
       {
         allowed_headers    = var.storage_images_blob_cors_allowed_headers
         allowed_methods    = var.storage_images_blob_cors_allowed_methods

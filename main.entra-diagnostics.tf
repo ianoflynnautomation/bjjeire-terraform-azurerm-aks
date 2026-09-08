@@ -35,8 +35,3 @@ module "entra_diagnostic_setting" {
   log_analytics_workspace_id = var.entra_diagnostics_log_analytics_workspace_id
   log_categories             = var.entra_diagnostics_log_categories
 }
-
-moved {
-  from = azurerm_monitor_aad_diagnostic_setting.entra_to_law
-  to   = module.entra_diagnostic_setting.azurerm_monitor_aad_diagnostic_setting.this
-}

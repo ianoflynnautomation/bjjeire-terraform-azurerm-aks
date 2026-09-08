@@ -36,28 +36,3 @@ module "cloudflare_tunnel" {
     : []
   )
 }
-
-moved {
-  from = random_password.tunnel_secret
-  to   = module.cloudflare_tunnel.random_password.tunnel_secret
-}
-
-moved {
-  from = cloudflare_zero_trust_tunnel_cloudflared.this
-  to   = module.cloudflare_tunnel.cloudflare_zero_trust_tunnel_cloudflared.this
-}
-
-moved {
-  from = cloudflare_zero_trust_tunnel_cloudflared_config.this
-  to   = module.cloudflare_tunnel.cloudflare_zero_trust_tunnel_cloudflared_config.this
-}
-
-moved {
-  from = cloudflare_dns_record.tunnel
-  to   = module.cloudflare_tunnel.cloudflare_dns_record.tunnel
-}
-
-moved {
-  from = cloudflare_dns_record.tunnel_wildcard
-  to   = module.cloudflare_tunnel.cloudflare_dns_record.tunnel_wildcard
-}

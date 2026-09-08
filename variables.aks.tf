@@ -179,6 +179,18 @@ variable "aks_load_balancer_sku" {
   nullable    = false
 }
 
+variable "aks_outbound_type" {
+  type        = string
+  default     = "userAssignedNATGateway"
+  description = "AKS egress method. userAssignedNATGateway uses the NAT Gateway associated with the system and workload subnets. Set only at cluster creation."
+  nullable    = false
+
+  validation {
+    condition     = contains(["loadBalancer", "managedNATGateway", "userAssignedNATGateway", "userDefinedRouting", "none"], var.aks_outbound_type)
+    error_message = "aks_outbound_type must be one of: loadBalancer, managedNATGateway, userAssignedNATGateway, userDefinedRouting, none."
+  }
+}
+
 variable "aks_role_based_access_control_enabled" {
   type        = bool
   default     = true
@@ -229,7 +241,7 @@ variable "aks_workload_identity_enabled" {
 variable "aks_private_cluster_enabled" {
   type        = bool
   default     = false
-  description = "Make the API server reachable only via a private endpoint."
+  description = "Make the API server reachable only via a private endpoint. Keep false: GitHub-hosted terraform-pipeline and PR-env wait-ready need a public API. Prod fail-closes empty authorized CIDRs instead."
   nullable    = false
 }
 

@@ -83,7 +83,7 @@ locals {
 
   github_aks_variables = local.github_manage_actions_oidc ? {
     AKS_CLUSTER_NAME   = var.aks_cluster_name
-    AKS_RESOURCE_GROUP = azurerm_resource_group.rg.name
+    AKS_RESOURCE_GROUP = module.rg.name
     AKS_CLUSTER_DOMAIN = var.cluster_domain
     AKS_ROOT_DOMAIN    = var.cloudflare_root_domain
   } : {}

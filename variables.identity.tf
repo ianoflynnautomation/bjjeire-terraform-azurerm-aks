@@ -67,6 +67,55 @@ variable "tests_runner_identity_name_prefix" {
   nullable    = false
 }
 
+variable "gha_terraform_identity_name_prefix" {
+  type        = string
+  default     = "uami-gha-tf-"
+  description = "Prefix for the UAMI that GitHub Actions in this Terraform repository uses for plan/apply via OIDC. Final name: <prefix><environment>-<location_short_name>."
+  nullable    = false
+}
+
+variable "github_terraform_repo_id" {
+  type        = string
+  default     = ""
+  description = "Numeric GitHub repository id for var.github_repo. Empty uses the name-only OIDC subject (repo:ORG/REPO:…). Set to the id if this repository has immutable OIDC subjects (repo:ORG@OID/REPO@RID:…)."
+  nullable    = false
+}
+
+variable "gha_terraform_rg_contributor_role_name" {
+  type        = string
+  default     = "Contributor"
+  description = "Azure RBAC role assigned to the Terraform CI identity on the workload resource group."
+  nullable    = false
+}
+
+variable "gha_terraform_rg_uaa_role_name" {
+  type        = string
+  default     = "User Access Administrator"
+  description = "Azure RBAC role assigned to the Terraform CI identity on the workload resource group so it can create the stack's role assignments."
+  nullable    = false
+}
+
+variable "gha_terraform_state_role_name" {
+  type        = string
+  default     = "Storage Blob Data Contributor"
+  description = "Azure RBAC role assigned to the Terraform CI identity on the state storage account (azurerm backend with use_azuread_auth)."
+  nullable    = false
+}
+
+variable "gha_terraform_application_administrator" {
+  type        = bool
+  default     = false
+  description = "When true, assign Cloud Application Administrator to the Terraform CI identity so plan/apply can manage Entra app registrations. Requires the applying principal to be Privileged Role Administrator. Default false — grant the directory role to the UAMI in Entra/PIM after the first laptop apply (see setup.md)."
+  nullable    = false
+}
+
+variable "github_environment_reviewer_logins" {
+  type        = list(string)
+  default     = []
+  description = "GitHub usernames required to review deployments to this stack's GitHub Environment. Ignored on environment=dev (PR plans must run unattended). Set on staging/prod, or configure reviewers in the GitHub UI."
+  nullable    = false
+}
+
 variable "gha_pr_env_tests_repo" {
   type        = string
   default     = "bjjeire-tests"
@@ -148,31 +197,38 @@ variable "aks_pr_env_role_data_actions" {
     "Microsoft.ContainerService/managedClusters/*/read",
     "Microsoft.ContainerService/managedClusters/namespaces/write",
     "Microsoft.ContainerService/managedClusters/namespaces/delete",
-    "Microsoft.ContainerService/managedClusters/core/*",
+    "Microsoft.ContainerService/managedClusters/configmaps/*",
+    "Microsoft.ContainerService/managedClusters/limitranges/*",
+    "Microsoft.ContainerService/managedClusters/resourcequotas/*",
     "Microsoft.ContainerService/managedClusters/apps/*",
     "Microsoft.ContainerService/managedClusters/networking.k8s.io/*",
-    "Microsoft.ContainerService/managedClusters/gateway.networking.k8s.io/*",
+    # Merge-to-main wait-ready does `kubectl apply` of a ResourceSetInputProvider
+    # (fluxcd.controlplane.io) in flux-system. Azure RBAC matches CRDs by API
+    # group — customresources/* is accepted as a data-action name but does NOT
+    # authorize fluxcd.controlplane.io / helm.toolkit.fluxcd.io / ESO / Istio /
+    # Gateway. Those groups must be listed. Do not use core/* (not a real
+    # Azure data-action prefix; pods/configmaps/secrets are top-level).
+    "Microsoft.ContainerService/managedClusters/fluxcd.controlplane.io/*",
     "Microsoft.ContainerService/managedClusters/helm.toolkit.fluxcd.io/*",
     "Microsoft.ContainerService/managedClusters/kustomize.toolkit.fluxcd.io/*",
-    "Microsoft.ContainerService/managedClusters/fluxcd.controlplane.io/*",
+    "Microsoft.ContainerService/managedClusters/gateway.networking.k8s.io/*",
     "Microsoft.ContainerService/managedClusters/external-secrets.io/*",
     "Microsoft.ContainerService/managedClusters/security.istio.io/*",
     "Microsoft.ContainerService/managedClusters/networking.istio.io/*",
+    "Microsoft.ContainerService/managedClusters/customresources/*",
   ]
-  description = "Azure RBAC for Kubernetes data actions for the PR-env identity. Sized to GitOps preview (sha-env/manifests.yaml + flux-preview ClusterRole) plus wait-ready reads. Cluster-wide Azure Kubernetes Service RBAC Admin is intentionally not used."
+  description = "Azure RBAC for Kubernetes data actions for the PR-env identity. Sized to GitOps preview (sha-env kubectl apply of ResourceSetInputProvider + flux-preview ClusterRole) plus wait-ready reads. Flux/ESO/Istio/Gateway CRDs must be named by API group; customresources/* is not a substitute. Cluster-wide Azure Kubernetes Service RBAC Admin is intentionally not used."
   nullable    = false
 }
 
 variable "aks_pr_env_role_not_data_actions" {
   type = list(string)
   default = [
-    "Microsoft.ContainerService/managedClusters/core/pods/exec/action",
-    "Microsoft.ContainerService/managedClusters/core/pods/attach/action",
-    "Microsoft.ContainerService/managedClusters/core/pods/portforward/action",
-    "Microsoft.ContainerService/managedClusters/core/secrets/write",
-    "Microsoft.ContainerService/managedClusters/core/secrets/delete",
+    "Microsoft.ContainerService/managedClusters/pods/exec/action",
+    "Microsoft.ContainerService/managedClusters/secrets/write",
+    "Microsoft.ContainerService/managedClusters/secrets/delete",
   ]
-  description = "Data actions subtracted from aks_pr_env_role_data_actions. core/* would otherwise allow exec and secret mutation in every namespace."
+  description = "Data actions subtracted from aks_pr_env_role_data_actions. Prevents exec and secret mutation. Attach/port-forward are not Azure data-action names, so they are omitted rather than listed as not_actions."
   nullable    = false
 }
 
@@ -262,7 +318,7 @@ variable "github_app_private_key" {
 
   validation {
     condition     = startswith(trimspace(var.github_app_private_key), "-----BEGIN") && strcontains(var.github_app_private_key, "PRIVATE KEY-----")
-    error_message = "github_app_private_key must be a PEM-encoded private key."
+    error_message = "github_app_private_key is missing or not a PEM. Do not put it in tfvars. Export the GitHub App private key as: TF_VAR_github_app_private_key=\"$(cat /path/to/bjjeire.private-key.pem)\". Generate a new key at github.com/settings/apps/bjjeire → Private keys if you no longer have the file."
   }
 }
 
