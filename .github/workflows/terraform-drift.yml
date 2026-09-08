@@ -1,0 +1,133 @@
+name: terraform-drift
+
+# Scheduled plan against live state. Does not upload a plan file (this repo is
+# public; binary plans contain secrets). Opens or updates one issue per
+# environment, labelled terraform-drift-<env>.
+
+on:
+  # schedule:
+  #   - cron: "0 6 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to check for drift
+        type: choice
+        options: [dev, staging, prod]
+        default: prod
+
+permissions: {}
+
+concurrency:
+  group: terraform-drift-${{ github.event.inputs.environment || 'prod' }}
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: "1.15.3"
+
+jobs:
+  drift:
+    name: Detect drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+    env:
+      ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: "true"
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_cloudflare_api_token: ${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN }}
+      TF_VAR_github_app_private_key: ${{ secrets.TF_VAR_GITHUB_APP_PRIVATE_KEY }}
+      TF_VAR_ghcr_pat: ${{ secrets.TF_VAR_GHCR_PAT }}
+      TF_VAR_github_preview_pat: ${{ secrets.TF_VAR_GITHUB_PREVIEW_PAT }}
+      TF_VAR_private_email: ${{ secrets.TF_VAR_PRIVATE_EMAIL }}
+      TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform init
+        env:
+          TF_STATE_RG: ${{ vars.TF_STATE_RG }}
+          TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
+          ENV_NAME: ${{ github.event.inputs.environment || 'prod' }}
+        run: |
+          set -euo pipefail
+          terraform init \
+            -backend-config="resource_group_name=${TF_STATE_RG}" \
+            -backend-config="storage_account_name=${TF_STATE_ACCOUNT}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${ENV_NAME}.tfstate" \
+            -backend-config="use_oidc=true" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Terraform plan
+        id: plan
+        env:
+          ENV_NAME: ${{ github.event.inputs.environment || 'prod' }}
+        run: |
+          set -euo pipefail
+          VAR_FILE="environments/${ENV_NAME}/terraform.tfvars"
+          set +e
+          terraform plan -detailed-exitcode -lock=false -no-color \
+            -var-file="$VAR_FILE" -out=drift.tfplan
+          ec=$?
+          set -e
+          case $ec in
+            0) echo "drift=false" >> "$GITHUB_OUTPUT"
+               echo "::notice title=Drift::No drift" ;;
+            2) echo "drift=true" >> "$GITHUB_OUTPUT"
+               echo "::warning title=Drift::Live state has drifted" ;;
+            *) echo "::error title=Drift check failed::terraform plan exited ${ec}"
+               exit "$ec" ;;
+          esac
+
+      - name: Open or update drift issue
+        if: steps.plan.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ENV_NAME: ${{ github.event.inputs.environment || 'prod' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          LABEL="terraform-drift-${ENV_NAME}"
+          TITLE="Terraform drift (${ENV_NAME})"
+          REPORT="$(terraform show -no-color drift.tfplan | head -c 50000)"
+          body="$(printf '### %s\n\nDetected: run [%s](%s)\n\n<details><summary>terraform plan</summary>\n\n```terraform\n%s\n```\n\n</details>\n' \
+            "$TITLE" "${GITHUB_RUN_ID}" "$RUN_URL" "$REPORT")"
+          gh label create "$LABEL" --description "Terraform drift tracked by CI" --color FBCA04 2>/dev/null || true
+          number="$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number // empty')"
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body "$body" >/dev/null
+          else
+            gh issue create --title "$TITLE" --body "$body" --label "$LABEL" >/dev/null
+          fi
+          rm -f drift.tfplan
+
+      - name: Close drift issue when clean
+        if: steps.plan.outputs.drift == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ENV_NAME: ${{ github.event.inputs.environment || 'prod' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          LABEL="terraform-drift-${ENV_NAME}"
+          number="$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number // empty')"
+          [ -z "$number" ] && exit 0
+          gh issue comment "$number" --body "Drift resolved — [this run]($RUN_URL) found live state matching the configuration. Closing." >/dev/null
+          gh issue close "$number" >/dev/null
+          rm -f drift.tfplan
