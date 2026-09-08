@@ -55,7 +55,7 @@ locals {
 
 module "storage_atest_history" {
   source  = "Azure/avm-res-storage-storageaccount/azurerm"
-  version = "0.6.8"
+  version = "0.10.0"
 
   # Opt-in per environment. The root module is shared, so this is created only
   # where storage_atest_account_name is set — dev today, others when they want
@@ -63,11 +63,11 @@ module "storage_atest_history" {
   # `terraform plan` in the others.
   count = local.atest_history_enabled ? 1 : 0
 
-  name                = var.storage_atest_account_name
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  tags                = var.tags
-  enable_telemetry    = var.vnet_enable_telemetry
+  name             = var.storage_atest_account_name
+  parent_id        = module.rg.resource_id
+  location         = module.rg.location
+  tags             = var.tags
+  enable_telemetry = var.vnet_enable_telemetry
 
   account_tier             = var.storage_atest_account_tier
   account_replication_type = var.storage_atest_replication_type

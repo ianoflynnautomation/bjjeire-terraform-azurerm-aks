@@ -5,10 +5,6 @@ resource "tls_private_key" "aks_ssh_key" {
 
 locals {
   workload_node_pools = {
-    # Application + preview workloads. Untainted User pool so they do not
-    # compete with AKS system add-ons on the system pool (AKS: system pool is
-    # for critical add-ons; User pools for apps). Do not taint system with
-    # CriticalAddonsOnly until Flux/Istio/Kyverno carry that toleration.
     apps = {
       name                 = "apps"
       mode                 = "User"
@@ -30,17 +26,8 @@ locals {
       vnet_subnet_id  = module.virtual_network.subnets["workload"].resource_id
     }
     runners = {
-      name = "runners"
-      mode = "User"
-      # Spot. Sweden Central lowPriorityCores is 3. A D4 SKU is 4 vCPU and
-      # never comes up; D2 is 2 vCPU and fits. Must be amd64: the ARC runner
-      # image (actions-runner:2.337.0) has no arm64 manifest, so D2pds_v6
-      # schedules then ImagePullBackOff. D2ds_v6 is x86, Ddsv6 family quota
-      # is 10, and the local disk fits a 64 GiB ephemeral OS disk. Do not set
-      # upgrade_settings (AVM defaults maxUnavailable to "0"; Spot rejects
-      # the field). Do not set min_count=1: default maxSurge adds a second
-      # node on create (2+2=4 vCPU). Create empty; CA adds one node when
-      # runner pods are Pending.
+      name                 = "runners"
+      mode                 = "User"
       vm_size              = "Standard_D2ds_v6"
       priority             = "Spot"
       eviction_policy      = "Delete"
@@ -67,10 +54,10 @@ locals {
 
 module "aks" {
   source  = "Azure/avm-res-containerservice-managedcluster/azurerm"
-  version = "0.6.7"
+  version = "0.8.3"
 
-  location  = azurerm_resource_group.rg.location
-  parent_id = azurerm_resource_group.rg.id
+  location  = module.rg.location
+  parent_id = module.rg.resource_id
   name      = var.aks_cluster_name
 
   enable_telemetry = var.aks_enable_telemetry
@@ -122,13 +109,14 @@ module "aks" {
     enable_node_public_ip       = var.aks_node_public_ip_enabled
     temporary_name_for_rotation = var.aks_temporary_name_for_rotation
     availability_zones          = var.aks_agents_availability_zones
-    vnet_subnet_id              = module.virtual_network.subnets["workload"].resource_id
+    vnet_subnet_id              = module.virtual_network.subnets["system"].resource_id
   }
 
   network_profile = {
     network_plugin    = var.aks_network_plugin
     network_policy    = var.aks_network_policy
     load_balancer_sku = var.aks_load_balancer_sku
+    outbound_type     = var.aks_outbound_type
   }
 
   auto_scaler_profile = var.aks_auto_scaler_profile_enabled ? {
@@ -164,7 +152,7 @@ module "aks" {
 
 module "workload_node_pools" {
   source   = "Azure/avm-res-containerservice-managedcluster/azurerm//modules/agentpool"
-  version  = "0.6.7"
+  version  = "0.8.3"
   for_each = local.workload_node_pools
 
   parent_id = module.aks.resource_id

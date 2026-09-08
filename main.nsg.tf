@@ -35,8 +35,8 @@ module "cloudflare_ingress_nsg" {
   count   = var.enable_cloudflare_origin_lockdown ? 1 : 0
 
   name                = "${var.aks_cluster_name}${var.cloudflare_nsg_name_suffix}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = module.rg.location
+  resource_group_name = module.rg.name
   tags                = var.tags
 
   security_rules = {

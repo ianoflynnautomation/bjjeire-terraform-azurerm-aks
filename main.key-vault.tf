@@ -168,15 +168,23 @@ locals {
       principal_id               = module.workload_identities.principal_ids["flux"]
     }
   }
+
+  kv_private_endpoints = merge(var.kv_private_endpoints, {
+    vault = {
+      subnet_resource_id            = module.virtual_network.subnets["private_endpoints"].resource_id
+      private_dns_zone_resource_ids = [module.kv_private_dns_zone.resource_id]
+      tags                          = var.tags
+    }
+  })
 }
 
 module "key_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.10.2"
+  version = "0.11.0"
 
-  location                                = azurerm_resource_group.rg.location
+  location                                = module.rg.location
   name                                    = var.kv_name
-  resource_group_name                     = azurerm_resource_group.rg.name
+  resource_group_name                     = module.rg.name
   tenant_id                               = data.azurerm_client_config.current.tenant_id
   contacts                                = var.kv_contacts
   diagnostic_settings                     = var.kv_diagnostic_settings
@@ -189,7 +197,7 @@ module "key_vault" {
   legacy_access_policies_enabled          = var.kv_legacy_access_policies_enabled
   lock                                    = var.kv_lock
   network_acls                            = var.kv_network_acls
-  private_endpoints                       = var.kv_private_endpoints
+  private_endpoints                       = local.kv_private_endpoints
   private_endpoints_manage_dns_zone_group = var.kv_private_endpoints_manage_dns_zone_group
   public_network_access_enabled           = var.kv_public_network_access_enabled
   purge_protection_enabled                = var.kv_purge_protection_enabled

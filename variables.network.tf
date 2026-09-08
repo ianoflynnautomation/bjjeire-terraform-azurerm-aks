@@ -294,6 +294,11 @@ variable "system_subnet_address_prefixes" {
   type        = list(string)
   default     = ["10.20.0.0/20"]
   description = "The address prefixes for the system subnet."
+
+  validation {
+    condition     = alltrue([for cidr in var.system_subnet_address_prefixes : can(cidrhost(cidr, 0))])
+    error_message = "system_subnet_address_prefixes entries must be valid CIDR prefixes."
+  }
 }
 
 variable "workload_subnet_name" {
@@ -306,6 +311,66 @@ variable "workload_subnet_address_prefixes" {
   type        = list(string)
   default     = ["10.20.16.0/20"]
   description = "The address prefixes for the workload/runner subnet."
+
+  validation {
+    condition     = alltrue([for cidr in var.workload_subnet_address_prefixes : can(cidrhost(cidr, 0))])
+    error_message = "workload_subnet_address_prefixes entries must be valid CIDR prefixes."
+  }
+}
+
+variable "private_endpoint_subnet_name" {
+  type        = string
+  default     = "PrivateEndpointSubnet"
+  description = "The name of the subnet that hosts private endpoints (Key Vault, and extra PEs from kv_private_endpoints)."
+  nullable    = false
+}
+
+variable "private_endpoint_subnet_address_prefixes" {
+  type        = list(string)
+  default     = ["10.20.32.0/24"]
+  description = "Address prefixes for the private-endpoint subnet. Must fall inside vnet_address_space (override per environment: 10.20.32.0/24 dev, 10.30.32.0/24 staging, 10.40.32.0/24 prod)."
+  nullable    = false
+
+  validation {
+    condition     = length(var.private_endpoint_subnet_address_prefixes) > 0 && alltrue([for cidr in var.private_endpoint_subnet_address_prefixes : can(cidrhost(cidr, 0))])
+    error_message = "private_endpoint_subnet_address_prefixes must contain at least one valid CIDR prefix."
+  }
+}
+
+variable "nat_gateway_name" {
+  type        = string
+  default     = null
+  description = "NAT Gateway name. When null, natgw-<aks_cluster_name> is used."
+}
+
+variable "nat_gateway_public_ip_name" {
+  type        = string
+  default     = null
+  description = "Public IP name associated with the NAT Gateway. When null, pip-natgw-<aks_cluster_name> is used."
+}
+
+variable "nat_gateway_sku_name" {
+  type        = string
+  default     = "Standard"
+  description = "NAT Gateway SKU. Standard is zonal and matches the current (unzoned) node pools. StandardV2 is zone-redundant; set it if you also spread node pools across zones. The associated public IP SKU is matched automatically."
+  nullable    = false
+
+  validation {
+    condition     = contains(["Standard", "StandardV2"], var.nat_gateway_sku_name)
+    error_message = "nat_gateway_sku_name must be Standard or StandardV2."
+  }
+}
+
+variable "nat_gateway_idle_timeout_in_minutes" {
+  type        = number
+  default     = 4
+  description = "NAT Gateway idle timeout in minutes (Azure allows 4–120)."
+  nullable    = false
+
+  validation {
+    condition     = var.nat_gateway_idle_timeout_in_minutes >= 4 && var.nat_gateway_idle_timeout_in_minutes <= 120
+    error_message = "nat_gateway_idle_timeout_in_minutes must be between 4 and 120."
+  }
 }
 
 variable "vnet_retry" {

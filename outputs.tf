@@ -1,3 +1,13 @@
+output "nat_gateway_resource_id" {
+  description = "Resource ID of the NAT Gateway attached to the system and workload subnets. AKS egress (userAssignedNATGateway) uses this."
+  value       = module.nat_gateway.resource_id
+}
+
+output "kv_private_dns_zone_resource_id" {
+  description = "Resource ID of privatelink.vaultcore.azure.net, linked to the cluster VNet for Key Vault private-endpoint resolution."
+  value       = module.kv_private_dns_zone.resource_id
+}
+
 output "kv_uri" {
   description = "Key Vault URI. Used for ad-hoc `az keyvault secret list/show --vault-name` operations."
   value       = module.key_vault.uri
@@ -36,5 +46,5 @@ output "storage_atest_history_url" {
 
 output "storage_images_primary_blob_endpoint" {
   description = "Primary blob endpoint for the images storage account. Used as the Cloudflare origin when surfacing images through the CDN."
-  value       = nonsensitive(module.storage_images.resource.primary_blob_endpoint)
+  value       = "https://${module.storage_images.fqdn["blob"]}/"
 }

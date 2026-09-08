@@ -3,37 +3,37 @@ locals {
   workload_identity_audience = ["api://AzureADTokenExchange"]
   github_oidc_issuer         = "https://token.actions.githubusercontent.com"
 
-  fic_name_external_secrets         = "fic-external-secrets"
-  fic_name_bjjeire_api              = "fic-bjjeire-api"
-  fic_name_bjjeire_seeder           = "fic-bjjeire-seeder"
-  fic_name_flux_source              = "fic-flux-source-controller"
-  fic_name_flux_kustomize           = "fic-flux-kustomize-controller"
-  fic_name_flux_helm                = "fic-flux-helm-controller"
-  fic_name_flux_image_reflector     = "fic-flux-image-reflector"
-  fic_name_flux_image_automation    = "fic-flux-image-automation"
-  fic_name_flux_notification        = "fic-flux-notification-controller"
-  fic_name_gha_prenv_pull_request   = "fic-gha-prenv-pull-request"
-  fic_name_gha_prenv_main           = "fic-gha-prenv-main"
-  fic_name_gha_prenv_bjjeire_pr     = "fic-gha-prenv-bjjeire-pull-request"
-  fic_name_gha_prenv_bjjeire_main   = "fic-gha-prenv-bjjeire-main"
-  fic_name_tests_runner             = "fic-tests-runner"
-  fic_name_gha_atest_history_main   = "fic-gha-atest-history-main"
-  fic_name_gha_atest_history_app    = "fic-gha-atest-history-app-main"
-  fic_subject_external_secrets      = "system:serviceaccount:external-secrets:external-secrets"
-  fic_subject_bjjeire_api           = "system:serviceaccount:bjjeire:bjjeire-api"
-  fic_subject_bjjeire_seeder        = "system:serviceaccount:bjjeire:bjjeire-seeder"
-  fic_subject_tests_runner          = "system:serviceaccount:actions-runner-system:gha-runner-scale-set"
-  fic_subject_flux_source           = "system:serviceaccount:flux-system:source-controller"
-  fic_subject_flux_kustomize        = "system:serviceaccount:flux-system:kustomize-controller"
-  fic_subject_flux_helm             = "system:serviceaccount:flux-system:helm-controller"
-  fic_subject_flux_image_reflector  = "system:serviceaccount:flux-system:image-reflector-controller"
-  fic_subject_flux_image_automation = "system:serviceaccount:flux-system:image-automation-controller"
-  fic_subject_flux_notification     = "system:serviceaccount:flux-system:notification-controller"
+  fic_name_external_secrets          = "fic-external-secrets"
+  fic_name_bjjeire_api               = "fic-bjjeire-api"
+  fic_name_bjjeire_seeder            = "fic-bjjeire-seeder"
+  fic_name_flux_source               = "fic-flux-source-controller"
+  fic_name_flux_kustomize            = "fic-flux-kustomize-controller"
+  fic_name_flux_helm                 = "fic-flux-helm-controller"
+  fic_name_flux_image_reflector      = "fic-flux-image-reflector"
+  fic_name_flux_image_automation     = "fic-flux-image-automation"
+  fic_name_flux_notification         = "fic-flux-notification-controller"
+  fic_name_gha_prenv_pull_request    = "fic-gha-prenv-pull-request"
+  fic_name_gha_prenv_main            = "fic-gha-prenv-main"
+  fic_name_gha_prenv_bjjeire_pr      = "fic-gha-prenv-bjjeire-pull-request"
+  fic_name_gha_prenv_bjjeire_main    = "fic-gha-prenv-bjjeire-main"
+  fic_name_tests_runner              = "fic-tests-runner"
+  fic_name_gha_atest_history_main    = "fic-gha-atest-history-main"
+  fic_name_gha_atest_history_app     = "fic-gha-atest-history-app-main"
+  fic_name_gha_terraform_environment = "fic-gha-terraform-environment"
+  fic_name_gha_terraform_main        = "fic-gha-terraform-main"
+  fic_subject_external_secrets       = "system:serviceaccount:external-secrets:external-secrets"
+  fic_subject_bjjeire_api            = "system:serviceaccount:bjjeire:bjjeire-api"
+  fic_subject_bjjeire_seeder         = "system:serviceaccount:bjjeire:bjjeire-seeder"
+  fic_subject_tests_runner           = "system:serviceaccount:actions-runner-system:gha-runner-scale-set"
+  fic_subject_flux_source            = "system:serviceaccount:flux-system:source-controller"
+  fic_subject_flux_kustomize         = "system:serviceaccount:flux-system:kustomize-controller"
+  fic_subject_flux_helm              = "system:serviceaccount:flux-system:helm-controller"
+  fic_subject_flux_image_reflector   = "system:serviceaccount:flux-system:image-reflector-controller"
+  fic_subject_flux_image_automation  = "system:serviceaccount:flux-system:image-automation-controller"
+  fic_subject_flux_notification      = "system:serviceaccount:flux-system:notification-controller"
 
-  fic_subject_gha_prenv_tests_pr   = "repo:${var.github_org}/${var.gha_pr_env_tests_repo}:pull_request"
-  fic_subject_gha_prenv_tests_main = "repo:${var.github_org}/${var.gha_pr_env_tests_repo}:ref:refs/heads/${var.gha_pr_env_main_branch}"
-  # bjjeire was created 2026-07-19, so GitHub issues immutable OIDC subjects
-  # (repo:OWNER@OWNER-ID/REPO@REPO-ID:…). bjjeire-tests is older and keeps the name-only format.
+  fic_subject_gha_prenv_tests_pr     = "repo:${var.github_org}/${var.gha_pr_env_tests_repo}:pull_request"
+  fic_subject_gha_prenv_tests_main   = "repo:${var.github_org}/${var.gha_pr_env_tests_repo}:ref:refs/heads/${var.gha_pr_env_main_branch}"
   fic_subject_gha_prenv_bjjeire_pr   = "repo:${var.github_org}@${var.github_owner_id}/${var.gha_pr_env_app_repo}@${var.gha_pr_env_app_repo_id}:pull_request"
   fic_subject_gha_prenv_bjjeire_main = "repo:${var.github_org}@${var.github_owner_id}/${var.gha_pr_env_app_repo}@${var.gha_pr_env_app_repo_id}:ref:refs/heads/${var.gha_pr_env_main_branch}"
 
@@ -44,6 +44,14 @@ locals {
   # a dev-cluster capability. Staging/prod overlays omit bjj-eire-preview and
   # Kyverno deny-ephemeral-envs rejects those namespaces.
   gha_pr_env_enabled = coalesce(var.gha_pr_env_enabled, var.environment == "dev")
+
+  gha_terraform_repo_subject = (
+    var.github_terraform_repo_id != ""
+    ? "repo:${var.github_org}@${var.github_owner_id}/${var.github_repo}@${var.github_terraform_repo_id}"
+    : "repo:${var.github_org}/${var.github_repo}"
+  )
+  fic_subject_gha_terraform_environment = "${local.gha_terraform_repo_subject}:environment:${var.environment}"
+  fic_subject_gha_terraform_main        = "${local.gha_terraform_repo_subject}:ref:refs/heads/${var.gha_pr_env_main_branch}"
 }
 
 module "cluster_identity" {
@@ -51,8 +59,8 @@ module "cluster_identity" {
   version = "0.5.2"
 
   name                = "${var.cluster_identity_name_prefix}${var.environment}-${var.location_short_name}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = module.rg.name
+  location            = module.rg.location
   tags                = var.tags
   enable_telemetry    = var.identity_enable_telemetry
 
@@ -88,8 +96,8 @@ resource "azurerm_role_definition" "aks_pr_env_namespace_admin" {
 module "workload_identities" {
   source = "./modules/workload-identities"
 
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = module.rg.name
+  location            = module.rg.location
   tags                = var.tags
   enable_telemetry    = var.identity_enable_telemetry
 
@@ -189,6 +197,42 @@ module "workload_identities" {
         }
       }
     }
+
+    # GitHub Actions in THIS repository (plan/apply). Trusts the GitHub
+    # Environment named after var.environment (so PRs can plan against `dev`
+    # without a pull_request federated credential) and refs/heads/main.
+    # No pull_request subject — a PR must not be able to apply.
+    gha_terraform = {
+      name = "${var.gha_terraform_identity_name_prefix}${var.environment}-${var.location_short_name}"
+      federated_identity_credentials = {
+        environment = {
+          audience = local.workload_identity_audience
+          issuer   = local.github_oidc_issuer
+          name     = local.fic_name_gha_terraform_environment
+          subject  = local.fic_subject_gha_terraform_environment
+        }
+        main = {
+          audience = local.workload_identity_audience
+          issuer   = local.github_oidc_issuer
+          name     = local.fic_name_gha_terraform_main
+          subject  = local.fic_subject_gha_terraform_main
+        }
+      }
+      role_assignments = {
+        rg_contributor = {
+          role_definition_id_or_name = var.gha_terraform_rg_contributor_role_name
+          scope                      = module.rg.resource_id
+        }
+        rg_uaa = {
+          role_definition_id_or_name = var.gha_terraform_rg_uaa_role_name
+          scope                      = module.rg.resource_id
+        }
+        state_blob = {
+          role_definition_id_or_name = var.gha_terraform_state_role_name
+          scope                      = data.azurerm_storage_account.state.id
+        }
+      }
+    }
     },
     local.gha_pr_env_enabled ? {
       gha_pr_env = {
@@ -275,31 +319,6 @@ resource "azuread_app_role_assignment" "tests_runner_invoke" {
   resource_object_id  = module.bjjeire_app_registrations.api_service_principal_object_id
 }
 
-moved {
-  from = module.external_secrets_identity
-  to   = module.workload_identities.module.identity["external_secrets"]
-}
-
-moved {
-  from = module.api_identity
-  to   = module.workload_identities.module.identity["api"]
-}
-
-moved {
-  from = module.seeder_identity
-  to   = module.workload_identities.module.identity["seeder"]
-}
-
-moved {
-  from = module.flux_identity
-  to   = module.workload_identities.module.identity["flux"]
-}
-
-moved {
-  from = module.gha_pr_env_identity
-  to   = module.workload_identities.module.identity["gha_pr_env"]
-}
-
 output "bjjeire_api_identity_client_id" {
   description = "Client ID of the bjjeire-api workload identity. Used by the api ServiceAccount annotation."
   value       = module.workload_identities.client_ids["api"]
@@ -323,4 +342,9 @@ output "atest_history_identity_client_id" {
 output "tests_runner_identity_client_id" {
   description = "Client ID of the ARC test-runner identity. Annotate the gha-runner-scale-set ServiceAccount with `azure.workload.identity/client-id: <this value>` so the runner pod authenticates to Entra via Workload Identity instead of a stored secret."
   value       = module.workload_identities.client_ids["tests_runner"]
+}
+
+output "gha_terraform_identity_client_id" {
+  description = "Client ID of the GitHub Actions Terraform plan/apply identity. Written to the GitHub Environment ARM_CLIENT_ID variable for this environment. First laptop apply creates it; after that CI authenticates with OIDC."
+  value       = module.workload_identities.client_ids["gha_terraform"]
 }

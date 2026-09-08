@@ -15,21 +15,6 @@ module "bjjeire_app_registrations" {
   spa_redirect_uris       = var.spa_redirect_uris
 }
 
-moved {
-  from = module.app_reg_api
-  to   = module.bjjeire_app_registrations.module.api
-}
-
-moved {
-  from = module.app_reg_spa
-  to   = module.bjjeire_app_registrations.module.spa
-}
-
-moved {
-  from = azuread_application_pre_authorized.spa_calls_api
-  to   = module.bjjeire_app_registrations.azuread_application_pre_authorized.spa_calls_api
-}
-
 output "bjjeire_api_client_id" {
   description = "Client ID of the bjjeire-api app registration. Used by the API JWT validation and the SPA's MSAL_API_SCOPE."
   value       = module.bjjeire_app_registrations.api_client_id

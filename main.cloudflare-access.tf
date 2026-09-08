@@ -70,48 +70,6 @@ module "cloudflare_access_idp" {
   tests_service_token_policy_precedence = var.cloudflare_tests_service_token_policy_precedence
 }
 
-# State migration. Chain the prior in-place rename (azure_ad -> entra_id)
-# through into the module.
-moved {
-  from = cloudflare_zero_trust_access_identity_provider.azure_ad
-  to   = cloudflare_zero_trust_access_identity_provider.entra_id
-}
-
-moved {
-  from = cloudflare_zero_trust_access_identity_provider.entra_id
-  to   = module.cloudflare_access_idp.cloudflare_zero_trust_access_identity_provider.entra_id
-}
-
-moved {
-  from = azuread_application.cloudflare_idp
-  to   = module.cloudflare_access_idp.azuread_application.this
-}
-
-moved {
-  from = azuread_application_password.cloudflare_idp
-  to   = module.cloudflare_access_idp.azuread_application_password.this
-}
-
-moved {
-  from = azuread_service_principal.cloudflare_idp
-  to   = module.cloudflare_access_idp.azuread_service_principal.this
-}
-
-moved {
-  from = azuread_service_principal_delegated_permission_grant.cloudflare_idp
-  to   = module.cloudflare_access_idp.azuread_service_principal_delegated_permission_grant.this
-}
-
-moved {
-  from = cloudflare_zero_trust_access_application.cluster
-  to   = module.cloudflare_access_idp.cloudflare_zero_trust_access_application.this
-}
-
-moved {
-  from = cloudflare_zero_trust_access_policy.internal
-  to   = module.cloudflare_access_idp.cloudflare_zero_trust_access_policy.internal
-}
-
 output "bjjeire_cloudflare_tests_service_token_client_id" {
   description = "CF-Access-Client-Id header value for the tests service token. Null when cloudflare_tests_service_token_enabled = false."
   value       = module.cloudflare_access_idp.tests_service_token_client_id
