@@ -1,0 +1,332 @@
+name: terraform-pipeline
+
+# Quality + IaC scan via bjjeire-ci-templates. Plan/apply are local jobs:
+# this repository is public, and the reusable terraform-plan.yml uploads a
+# binary plan (sensitive values in cleartext). Plans stay on the runner.
+#
+# OIDC: the gha_terraform UAMI federates to
+#   repo:ORG/REPO:environment:<env>
+# so plan and apply jobs MUST set `environment:`. No pull_request subject —
+# a PR can plan against `dev` (no reviewers) but cannot apply.
+#
+# First apply of this stack is still from a laptop; it creates the UAMI and
+# writes ARM_* / TF_STATE_* onto the GitHub Environment. After that, CI
+# authenticates with OIDC. TF_VAR_* secrets are set once in the Environment.
+
+on:
+  # pull_request:
+  #   branches: [main]
+  # push:
+  #   branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to plan (and apply if apply is true)
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+      apply:
+        description: Apply after plan. Staging/prod require Environment reviewers.
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: terraform-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: "1.15.3"
+
+jobs:
+  setup:
+    name: Resolve environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+    steps:
+      - id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_ENV: ${{ github.event.inputs.environment }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            env_name="$DISPATCH_ENV"
+          else
+            env_name="dev"
+          fi
+          echo "environment=${env_name}" >> "$GITHUB_OUTPUT"
+          echo "Planning against GitHub Environment '${env_name}'"
+
+  quality:
+    name: Quality checks
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ianoflynnautomation/bjjeire-ci-templates/.github/workflows/terraform-quality.yml@v1
+    with:
+      terraform-version: "1.15.3"
+      tflint-version: "v0.53.0"
+      tflint-var-file: environments/dev/example.tfvars
+      tflint-module-paths: "modules/*/"
+
+  iac-scan:
+    name: IaC scan
+    permissions:
+      contents: read
+      security-events: write
+    uses: ianoflynnautomation/bjjeire-ci-templates/.github/workflows/iac-scan.yml@v1
+    with:
+      scan-path: "."
+      severity: CRITICAL,HIGH
+      trivyignore-file: .trivyignore
+      trivy-config-file: trivy.yaml
+      sarif-category: trivy-iac
+
+  plan:
+    name: Plan
+    needs: [setup, quality, iac-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ needs.setup.outputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
+    env:
+      ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: "true"
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_cloudflare_api_token: ${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN }}
+      TF_VAR_github_app_private_key: ${{ secrets.TF_VAR_GITHUB_APP_PRIVATE_KEY }}
+      TF_VAR_ghcr_pat: ${{ secrets.TF_VAR_GHCR_PAT }}
+      TF_VAR_github_preview_pat: ${{ secrets.TF_VAR_GITHUB_PREVIEW_PAT }}
+      TF_VAR_private_email: ${{ secrets.TF_VAR_PRIVATE_EMAIL }}
+      TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check CI bootstrap
+        env:
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+          ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+          TF_STATE_RG: ${{ vars.TF_STATE_RG }}
+          TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          missing=0
+          if [ -z "${ARM_CLIENT_ID}" ]; then
+            echo "::error title=CI not bootstrapped::GitHub Environment '${ENV_NAME}' has no ARM_CLIENT_ID. Apply this stack once from a laptop so it creates the gha_terraform UAMI and writes the Environment variables."
+            missing=1
+          fi
+          if [ -z "${TF_STATE_RG}" ] || [ -z "${TF_STATE_ACCOUNT}" ]; then
+            echo "::error title=CI not bootstrapped::GitHub Environment '${ENV_NAME}' is missing TF_STATE_RG / TF_STATE_ACCOUNT."
+            missing=1
+          fi
+          if [ ! -f "environments/${ENV_NAME}/terraform.tfvars" ]; then
+            echo "::error title=tfvars missing::environments/${ENV_NAME}/terraform.tfvars is not in git. Commit a secret-free tfvars (see setup.md); pass secrets as TF_VAR_* Environment secrets."
+            missing=1
+          fi
+          exit "$missing"
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Prepare plugin cache directory
+        run: mkdir -p "$HOME/.terraform.d/plugin-cache"
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-tfplugins-${{ env.TF_VERSION }}-${{ hashFiles('.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-tfplugins-${{ env.TF_VERSION }}-
+            ${{ runner.os }}-tfplugins-
+
+      - name: Configure plugin cache
+        run: echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >> "$GITHUB_ENV"
+
+      - name: Terraform init
+        env:
+          TF_STATE_RG: ${{ vars.TF_STATE_RG }}
+          TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+        run: |
+          set -euo pipefail
+          echo "::group::terraform init"
+          terraform init \
+            -backend-config="resource_group_name=${TF_STATE_RG}" \
+            -backend-config="storage_account_name=${TF_STATE_ACCOUNT}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${ENV_NAME}.tfstate" \
+            -backend-config="use_oidc=true" \
+            -backend-config="use_azuread_auth=true"
+          echo "::endgroup::"
+
+      - name: Terraform plan
+        id: plan
+        env:
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+        run: |
+          set -euo pipefail
+          echo "::group::terraform plan"
+          set +e
+          terraform plan -detailed-exitcode -no-color \
+            -var-file="environments/${ENV_NAME}/terraform.tfvars" \
+            -out=tfplan
+          ec=$?
+          set -e
+          echo "::endgroup::"
+          case $ec in
+            0)
+              echo "has_changes=false" >> "$GITHUB_OUTPUT"
+              echo "::notice title=Terraform plan::No changes" ;;
+            2)
+              echo "has_changes=true" >> "$GITHUB_OUTPUT"
+              echo "::notice title=Terraform plan::Changes detected" ;;
+            *)
+              echo "::error title=Terraform plan::Plan failed (exit ${ec})"
+              exit "$ec" ;;
+          esac
+
+      - name: Write plan summary
+        env:
+          HAS_CHANGES: ${{ steps.plan.outputs.has_changes }}
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+        run: |
+          set -euo pipefail
+          PLAN_FULL=$(terraform show -no-color tfplan)
+          PLAN_TEXT=$(printf '%s' "$PLAN_FULL" | head -c 60000)
+          TRUNCATED=""
+          if [ "${#PLAN_FULL}" -gt 60000 ]; then
+            TRUNCATED="_Plan truncated at 60000 characters — see the terraform plan step log._"
+          fi
+          {
+            echo "### Terraform plan (\`${ENV_NAME}\`)"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Environment | \`${ENV_NAME}\` |"
+            echo "| Terraform | \`${TF_VERSION}\` |"
+            echo "| Has changes | ${HAS_CHANGES} |"
+            echo ""
+            echo '```terraform'
+            echo "$PLAN_TEXT"
+            echo '```'
+            [ -n "$TRUNCATED" ] && { echo ""; echo "$TRUNCATED"; }
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Discard plan file
+        if: always()
+        run: rm -f tfplan
+
+  apply:
+    name: Apply
+    needs: [setup, plan]
+    if: >-
+      needs.plan.outputs.has_changes == 'true' &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ needs.setup.outputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: "true"
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_cloudflare_api_token: ${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN }}
+      TF_VAR_github_app_private_key: ${{ secrets.TF_VAR_GITHUB_APP_PRIVATE_KEY }}
+      TF_VAR_ghcr_pat: ${{ secrets.TF_VAR_GHCR_PAT }}
+      TF_VAR_github_preview_pat: ${{ secrets.TF_VAR_GITHUB_PREVIEW_PAT }}
+      TF_VAR_private_email: ${{ secrets.TF_VAR_PRIVATE_EMAIL }}
+      TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Prepare plugin cache directory
+        run: mkdir -p "$HOME/.terraform.d/plugin-cache"
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-tfplugins-${{ env.TF_VERSION }}-${{ hashFiles('.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-tfplugins-${{ env.TF_VERSION }}-
+            ${{ runner.os }}-tfplugins-
+
+      - name: Configure plugin cache
+        run: echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >> "$GITHUB_ENV"
+
+      - name: Terraform init
+        env:
+          TF_STATE_RG: ${{ vars.TF_STATE_RG }}
+          TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+        run: |
+          set -euo pipefail
+          terraform init \
+            -backend-config="resource_group_name=${TF_STATE_RG}" \
+            -backend-config="storage_account_name=${TF_STATE_ACCOUNT}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${ENV_NAME}.tfstate" \
+            -backend-config="use_oidc=true" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Terraform plan and apply
+        env:
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+        run: |
+          set -euo pipefail
+          echo "::group::terraform plan"
+          terraform plan -no-color \
+            -var-file="environments/${ENV_NAME}/terraform.tfvars" \
+            -out=tfplan
+          echo "::endgroup::"
+          echo "::group::terraform apply"
+          terraform apply -auto-approve tfplan
+          echo "::endgroup::"
+          rm -f tfplan
+          echo "::notice title=Terraform apply::Applied ${ENV_NAME}"
+
+      - name: Write apply summary
+        if: always()
+        env:
+          ENV_NAME: ${{ needs.setup.outputs.environment }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "### Terraform apply"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Environment | \`${ENV_NAME}\` |"
+            echo "| Result | ${JOB_STATUS} |"
+          } >> "$GITHUB_STEP_SUMMARY"

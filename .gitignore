@@ -65,7 +65,7 @@ terraform-*.log
 graph.png
 
 # Terraform docs output (unless intentionally committed)
-.terraform-docs/
+.terraform-docs/Users
 
 #------------------------------------------------------------------------------
 # Terragrunt
@@ -496,3 +496,5 @@ todo.txt
 NOTES.md
 personal/
 scratch/
+
+setup.md
