@@ -7,6 +7,9 @@ repos:
       - id: terraform_validate
 
       - id: terraform_docs
+        files: ^modules/
+        args:
+          - --args=--config=.terraform-docs.yml
 
       - id: terraform_trivy
         args:

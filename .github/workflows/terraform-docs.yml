@@ -1,0 +1,77 @@
+name: terraform-docs
+
+# Fails when a module's generated README block is stale. Generated docs cannot
+# drift from the code if regenerating them is a required check.
+#
+# Fix locally with:
+#   pre-commit run terraform_docs --all-files
+# or:
+#   terraform-docs --config .terraform-docs.yml modules/<name>
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "modules/**"
+      - ".terraform-docs.yml"
+      - ".github/workflows/terraform-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check generated module docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Keep this in sync with the version used locally — terraform-docs output
+      # can change between minor releases, and a mismatch shows up here as a
+      # stale-docs failure on an unmodified module.
+      - name: Install terraform-docs
+        env:
+          TERRAFORM_DOCS_VERSION: v0.24.0
+        run: |
+          set -euo pipefail
+          curl -sSLo /tmp/terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          tar -xzf /tmp/terraform-docs.tar.gz -C /tmp terraform-docs
+          install -m 0755 /tmp/terraform-docs /usr/local/bin/terraform-docs
+          terraform-docs --version
+
+      - name: Regenerate module docs
+        run: |
+          set -euo pipefail
+          for module in modules/*/; do
+            echo "::group::${module}"
+            terraform-docs --config .terraform-docs.yml "$module"
+            echo "::endgroup::"
+          done
+
+      - name: Fail if docs are stale
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- 'modules/*/README.md'; then
+            echo "::notice title=terraform-docs::Module documentation is up to date"
+            exit 0
+          fi
+          echo "::error title=Stale module docs::Generated documentation does not match the configuration. Run 'pre-commit run terraform_docs --all-files' and commit the result."
+          {
+            echo "### Stale module documentation"
+            echo ""
+            echo "Run \`pre-commit run terraform_docs --all-files\` and commit the result."
+            echo ""
+            echo '```diff'
+            git diff -- 'modules/*/README.md' | head -c 40000
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1

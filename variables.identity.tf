@@ -105,7 +105,7 @@ variable "gha_terraform_state_role_name" {
 variable "gha_terraform_application_administrator" {
   type        = bool
   default     = false
-  description = "When true, assign Cloud Application Administrator to the Terraform CI identity so plan/apply can manage Entra app registrations. Requires the applying principal to be Privileged Role Administrator. Default false — grant the directory role to the UAMI in Entra/PIM after the first laptop apply (see setup.md)."
+  description = "When true, assign Cloud Application Administrator to the Terraform CI identity so plan/apply can manage Entra app registrations. Requires the applying principal to be Privileged Role Administrator. Default false — grant the directory role to the UAMI in Entra/PIM after the first laptop apply (see docs/runbooks/setup.md)."
   nullable    = false
 }
 

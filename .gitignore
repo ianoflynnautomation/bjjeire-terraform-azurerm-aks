@@ -497,4 +497,7 @@ NOTES.md
 personal/
 scratch/
 
-setup.md
+# Anchored to the repo root: the published runbook lives at
+# docs/runbooks/setup.md and is tracked. A bare "setup.md" pattern matches at
+# any depth and would ignore that too.
+/setup.md
