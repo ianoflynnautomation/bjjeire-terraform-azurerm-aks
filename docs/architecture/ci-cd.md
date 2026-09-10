@@ -8,8 +8,9 @@ outputs of this stack.
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| [`terraform-pipeline.yml`](../../.github/workflows/terraform-pipeline.yml) | `workflow_dispatch` | Quality → IaC scan → plan → optional apply, per environment |
-| [`terraform-quality.yml`](../../.github/workflows/terraform-quality.yml) | `workflow_dispatch` | `fmt`, `validate`, tflint via the shared template |
+| [`terraform-pipeline.yml`](../../.github/workflows/terraform-pipeline.yml) | `workflow_dispatch` | Quality → IaC scan → unit tests → plan → optional apply, per environment |
+| [`terraform-quality.yml`](../../.github/workflows/terraform-quality.yml) | `workflow_dispatch` | `fmt`, `validate`, tflint via the shared template, plus native unit tests |
+| [`terraform-test.yml`](../../.github/workflows/terraform-test.yml) | `pull_request`, `workflow_dispatch`, `workflow_call` | `terraform test` (plan-only, mocked providers; no cloud credentials) |
 | [`terraform-audit.yml`](../../.github/workflows/terraform-audit.yml) | `workflow_dispatch` | Trivy IaC scan, SARIF to code scanning |
 | [`terraform-drift.yml`](../../.github/workflows/terraform-drift.yml) | `workflow_dispatch` | Plan against live state, open/close a drift issue |
 | [`terraform-docs.yml`](../../.github/workflows/terraform-docs.yml) | `pull_request`, `workflow_dispatch` | Fail if generated module docs are stale |
@@ -54,9 +55,13 @@ The plan job has a preflight step that fails with an actionable annotation if
 ## Plan and apply
 
 ```
-setup → quality ─┐
-      → iac-scan ─┴→ plan (environment:<env>) → apply (if inputs.apply)
+setup → quality ──┐
+      → iac-scan ──┼→ plan (environment:<env>) → apply (if inputs.apply)
+      → unit-test ─┘
 ```
+
+`unit-test` runs native `terraform test` with mocked providers. It does not
+authenticate to Azure and does not need a GitHub Environment.
 
 `plan` runs `terraform plan -detailed-exitcode`, writes a truncated
 `terraform show` into the job step summary, and deletes the plan file in an
@@ -87,6 +92,9 @@ again.
 - `terraform fmt -check`, `terraform validate`, tflint with
   `.tflint.hcl` (azurerm ruleset, typed/documented variable rules,
   `terraform_workspace_remote` on).
+- Native `terraform test` (plan-only, mocked providers) on pull requests that
+  touch HCL or `tests/`, on `terraform-quality.yml`, and as a gate before
+  pipeline plan.
 - Trivy IaC scan at `CRITICAL,HIGH`, honouring `.trivyignore` and `trivy.yaml`,
   uploading SARIF under the `trivy-iac` category.
 - terraform-docs staleness check on every pull request.

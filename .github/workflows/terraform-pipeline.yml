@@ -86,9 +86,17 @@ jobs:
       trivy-config-file: trivy.yaml
       sarif-category: trivy-iac
 
+  unit-test:
+    name: Terraform unit tests
+    permissions:
+      contents: read
+    uses: ./.github/workflows/terraform-test.yml
+    with:
+      terraform-version: "1.15.3"
+
   plan:
     name: Plan
-    needs: [setup, quality, iac-scan]
+    needs: [setup, quality, iac-scan, unit-test]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ needs.setup.outputs.environment }}

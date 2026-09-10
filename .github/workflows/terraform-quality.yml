@@ -28,3 +28,12 @@ jobs:
       tflint-version: "v0.53.0"
       tflint-var-file: environments/dev/example.tfvars
       tflint-module-paths: "modules/*/"
+
+  unit-test:
+    name: Terraform unit tests
+    permissions:
+      contents: read
+    uses: ./.github/workflows/terraform-test.yml
+    with:
+      terraform-version: "1.15.3"
+      working-directory: ${{ inputs.working_directory || '.' }}

@@ -56,6 +56,7 @@ terraform init -backend-config=environments/dev/backend.hcl
 terraform plan -var-file=environments/dev/terraform.tfvars -out=tfplan
 terraform fmt -recursive
 terraform validate
+terraform test
 tflint --config="$(pwd)/.tflint.hcl"
 pre-commit run --all-files          # includes terraform-docs
 terraform-docs markdown table --output-file README.md --output-mode inject modules/<name>
@@ -92,6 +93,7 @@ docs/adr/              decisions and their rationale
 docs/architecture/     how the platform is put together
 docs/runbooks/         one-time and recurring operator procedures
 docs/diagrams/         architecture.drawio.svg (editable in draw.io)
+tests/                 native terraform test (plan-only, mocked providers)
 .github/workflows/     pipeline, quality, audit, drift, docs, renovate
 ```
 
