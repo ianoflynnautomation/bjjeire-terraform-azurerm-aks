@@ -133,7 +133,7 @@ jobs:
             missing=1
           fi
           if [ ! -f "environments/${ENV_NAME}/terraform.tfvars" ]; then
-            echo "::error title=tfvars missing::environments/${ENV_NAME}/terraform.tfvars is not in git. Commit a secret-free tfvars (see setup.md); pass secrets as TF_VAR_* Environment secrets."
+            echo "::error title=tfvars missing::environments/${ENV_NAME}/terraform.tfvars is not in git. Commit a secret-free tfvars (see docs/runbooks/setup.md); pass secrets as TF_VAR_* Environment secrets."
             missing=1
           fi
           exit "$missing"
