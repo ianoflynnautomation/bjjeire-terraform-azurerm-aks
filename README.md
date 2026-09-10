@@ -140,7 +140,7 @@ Vulnerability reports: [SECURITY.md](SECURITY.md).
 
 1. Branch from `main` (`feat/…`, `fix/…`, `chore/…`) and use
    [conventional commits](https://www.conventionalcommits.org/).
-2. Run `terraform fmt -recursive`, `terraform validate`, and `tflint` locally —
+2. Run `terraform fmt -recursive`, `terraform validate`, `terraform test`, and `tflint` locally —
    or `pre-commit run --all-files`, which also regenerates module docs.
 3. Update the matching page under `docs/architecture/` when you change
    topology, identity, or network posture. Record new decisions as an ADR.

@@ -33,6 +33,14 @@ locals {
     for g in data.azuread_group.aks_admins : g.object_id
   ]
 
+  # Display-name lookup wins when it resolves; otherwise the explicit object-id
+  # fallback (used by prod example.tfvars) is sent to aad_profile.
+  aks_admin_group_object_ids_effective = (
+    length(local.aks_admin_group_object_ids) > 0
+    ? local.aks_admin_group_object_ids
+    : var.aks_rbac_aad_admin_group_object_ids
+  )
+
   oauth2_proxy_allowed_group_id = (
     length(data.azuread_group.oauth2_proxy_allowed) == 0
     ? ""

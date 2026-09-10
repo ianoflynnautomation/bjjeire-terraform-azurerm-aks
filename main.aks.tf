@@ -4,6 +4,27 @@ resource "tls_private_key" "aks_ssh_key" {
 }
 
 locals {
+  aks_auto_scaler_profile = var.aks_auto_scaler_profile_enabled ? {
+    scale_down_delay_after_add       = var.aks_auto_scaler_profile_scale_down_delay_after_add
+    scale_down_unneeded              = var.aks_auto_scaler_profile_scale_down_unneeded
+    scale_down_utilization_threshold = var.aks_auto_scaler_profile_scale_down_utilization_threshold
+    max_graceful_termination_sec     = var.aks_auto_scaler_profile_max_graceful_termination_sec
+    skip_nodes_with_local_storage    = var.aks_auto_scaler_profile_skip_nodes_with_local_storage
+  } : null
+
+  aks_defender = var.aks_microsoft_defender_enabled ? {
+    security_monitoring = {
+      enabled = true
+    }
+  } : null
+
+  aks_security_profile = {
+    workload_identity = {
+      enabled = var.aks_workload_identity_enabled
+    }
+    defender = local.aks_defender
+  }
+
   workload_node_pools = {
     apps = {
       name                 = "apps"
@@ -84,7 +105,7 @@ module "aks" {
     managed                = true
     tenant_id              = data.azurerm_client_config.current.tenant_id
     enable_azure_rbac      = var.aks_rbac_aad_azure_rbac_enabled
-    admin_group_object_ids = length(local.aks_admin_group_object_ids) > 0 ? local.aks_admin_group_object_ids : var.aks_rbac_aad_admin_group_object_ids
+    admin_group_object_ids = local.aks_admin_group_object_ids_effective
   }
 
   oidc_issuer_profile = {
@@ -119,24 +140,9 @@ module "aks" {
     outbound_type     = var.aks_outbound_type
   }
 
-  auto_scaler_profile = var.aks_auto_scaler_profile_enabled ? {
-    scale_down_delay_after_add       = var.aks_auto_scaler_profile_scale_down_delay_after_add
-    scale_down_unneeded              = var.aks_auto_scaler_profile_scale_down_unneeded
-    scale_down_utilization_threshold = var.aks_auto_scaler_profile_scale_down_utilization_threshold
-    max_graceful_termination_sec     = var.aks_auto_scaler_profile_max_graceful_termination_sec
-    skip_nodes_with_local_storage    = var.aks_auto_scaler_profile_skip_nodes_with_local_storage
-  } : null
+  auto_scaler_profile = local.aks_auto_scaler_profile
 
-  security_profile = {
-    workload_identity = {
-      enabled = var.aks_workload_identity_enabled
-    }
-    defender = var.aks_microsoft_defender_enabled ? {
-      security_monitoring = {
-        enabled = true
-      }
-    } : null
-  }
+  security_profile = local.aks_security_profile
 
   linux_profile = {
     admin_username = var.aks_admin_username
