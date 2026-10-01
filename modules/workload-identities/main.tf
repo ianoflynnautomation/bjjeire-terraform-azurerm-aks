@@ -1,7 +1,7 @@
 module "identity" {
   for_each = var.identities
   source   = "Azure/avm-res-managedidentity-userassignedidentity/azurerm"
-  version  = "0.5.2"
+  version  = "0.5.3"
 
   name                = each.value.name
   resource_group_name = var.resource_group_name

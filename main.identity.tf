@@ -56,7 +56,7 @@ locals {
 
 module "cluster_identity" {
   source  = "Azure/avm-res-managedidentity-userassignedidentity/azurerm"
-  version = "0.5.2"
+  version = "0.5.3"
 
   name                = "${var.cluster_identity_name_prefix}${var.environment}-${var.location_short_name}"
   resource_group_name = module.rg.name
