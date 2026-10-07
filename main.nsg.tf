@@ -31,7 +31,7 @@ locals {
 
 module "cloudflare_ingress_nsg" {
   source  = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version = "0.5.1"
+  version = "0.6.0"
   count   = var.enable_cloudflare_origin_lockdown ? 1 : 0
 
   name                = "${var.aks_cluster_name}${var.cloudflare_nsg_name_suffix}"
