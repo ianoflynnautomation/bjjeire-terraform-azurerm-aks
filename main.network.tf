@@ -69,7 +69,7 @@ module "nat_gateway" {
 
 module "virtual_network" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "0.22.2"
+  version = "0.22.3"
 
   location                = module.rg.location
   parent_id               = module.rg.resource_id
